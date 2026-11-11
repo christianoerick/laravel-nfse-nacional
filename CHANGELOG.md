@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 - 2026-11-11
+
+- `NfseClient::check($dps)`: valida sem emitir. Confere certificado, XSD e assinatura no local e faz consultas só de leitura ao Sistema Nacional: convênio do município, código de serviço e alíquota, e se a DPS já foi usada.
+- `SimulatedNfseClient` (`client(..., simulate: true)` ou `NFSE_NACIONAL_SIMULATE`): fluxo completo sem rede, com NFS-e simulada válida no XSD, assinada e marcada.
+- Consultas de alíquota e regimes: o código vai no formato aceito pelo ADN (`01.05.01.001`). O código municipal entra por `municipalCode`, e sem ele é usado `000`.
+
 ## 0.2.0 - 2026-11-11
 
 - **NT SE/CGNFS-e 009 v1.01**: XSD oficiais de 20/10/2026 ao lado dos de 09/02/2026 (`resources/schemas/{v1.01,nt009}`). Escolha automática por data e ambiente (produção restrita desde 20/10/2026, produção a partir de 01/12/2026), configurável (`layout`, `layout_switch`).

@@ -3,6 +3,7 @@
 namespace ChristianoErick\NfseNacional\Http;
 
 use ChristianoErick\NfseNacional\Certificate\Certificate;
+use ChristianoErick\NfseNacional\Codes\ServiceCodes;
 use ChristianoErick\NfseNacional\Dps\Dps;
 use ChristianoErick\NfseNacional\Enums\CancellationReason;
 use ChristianoErick\NfseNacional\Enums\Environment;
@@ -46,6 +47,12 @@ class NfseClient
         private readonly HttpFactory $http,
     ) {
         $this->layout = Layout::resolve($config['layout'] ?? 'auto', $environment, null, $config['layout_switch'] ?? null);
+    }
+
+    /** true no SimulatedNfseClient (nada vai para o Sistema Nacional). */
+    public function isSimulated(): bool
+    {
+        return false;
     }
 
     /** Leiaute usado pela DPS e pelos eventos deste cliente (ambiente + data). */
@@ -115,6 +122,86 @@ class NfseClient
 
         // Com a declaração XML (encoding UTF-8): sem ela o Sefin recusa (E1229).
         return self::withDeclaration($this->signer()->sign($dom, 'infDPS', $this->certificate));
+    }
+
+    /**
+     * Confere a DPS sem emitir nada: certificado, XSD do leiaute em uso,
+     * assinatura e, só com consultas de leitura ao Sistema Nacional,
+     * convênio do município, código de serviço/alíquota e se a DPS já virou
+     * nota. Cada item: ok (true), falha (false) ou aviso (null).
+     *
+     * @return list<array{check: string, ok: bool|null, message: string}>
+     */
+    public function check(Dps $dps): array
+    {
+        $results = [];
+        $add = function (string $check, ?bool $ok, string $message) use (&$results): void {
+            $results[] = ['check' => $check, 'ok' => $ok, 'message' => $message];
+        };
+
+        $prepared = $this->prepare($dps);
+        $fields = $prepared->fields();
+        $issuerDocument = (string) ($fields['prest']['CNPJ'] ?? $fields['prest']['CPF'] ?? '');
+
+        $add('certificado', ! $this->certificate->isExpired(), $this->certificate->isExpired()
+            ? 'Certificado vencido em '.$this->certificate->validTo()->format('d/m/Y').'.'
+            : 'Válido até '.$this->certificate->validTo()->format('d/m/Y').' ('.$this->certificate->holderName().').');
+
+        if ($issuerDocument !== '' && $this->certificate->document() && $this->certificate->document() !== $issuerDocument) {
+            $add('certificado', null, "O certificado é do documento {$this->certificate->document()} e a DPS é do prestador {$issuerDocument} (só vale se for procurador).");
+        }
+
+        try {
+            $signed = $this->signDps($prepared);
+            $add('leiaute', true, 'DPS válida no XSD oficial ('.$this->layout->label().').');
+            $add('assinatura', XmlSigner::verify($signed), XmlSigner::verify($signed) ? 'Assinatura XMLDSig confere.' : 'Assinatura não confere.');
+        } catch (\ChristianoErick\NfseNacional\Exceptions\SchemaValidationException $e) {
+            $add('leiaute', false, $e->getMessage());
+        } catch (\ChristianoErick\NfseNacional\Exceptions\InvalidDataException $e) {
+            $add('leiaute', false, $e->getMessage());
+        }
+
+        $city = (string) ($fields['cLocEmi'] ?? '');
+
+        try {
+            $agreement = $this->municipalAgreement($city);
+            $add('convênio', true, "Município {$city} ativo no Sistema Nacional (".$this->environment->label().').');
+        } catch (\Throwable $e) {
+            $add('convênio', false, "Município {$city}: ".$e->getMessage().' Nesse ambiente a emissão será recusada (E0037).');
+        }
+
+        $incidence = (string) ($fields['serv']['locPrest']['cLocPrestacao'] ?? $city);
+        $national = (string) ($fields['serv']['cServ']['cTribNac'] ?? '');
+        $municipal = $fields['serv']['cServ']['cTribMun'] ?? null;
+
+        if ($national !== '') {
+            try {
+                $competence = (string) ($fields['dCompet'] instanceof \DateTimeInterface ? $fields['dCompet']->format('Y-m-d') : $fields['dCompet']);
+                $rate = $this->municipalRate($incidence, $national, $competence, $municipal);
+                $code = ServiceCodes::parameterCode($national, $municipal);
+                $found = $rate['aliquotas'][$code] ?? [];
+                $found === []
+                    ? $add('serviço', false, "Código {$code} não está administrado pelo município {$incidence} nessa competência (E0312). ".($municipal ? '' : 'Informe o código municipal (cTribMun).'))
+                    : $add('serviço', true, "Código {$code} ativo em {$incidence}, alíquota ".($found[0]['Aliq'] ?? '?').'%.');
+            } catch (\Throwable $e) {
+                $add('serviço', null, 'Não foi possível conferir o código de serviço: '.$e->getMessage());
+            }
+        }
+
+        try {
+            $exists = $this->dpsExists($prepared->id());
+            $add('numeração', $exists ? null : true, $exists
+                ? 'Já existe NFS-e para esta DPS ('.$prepared->id().'): o envio recupera a nota em vez de criar outra.'
+                : 'DPS '.$prepared->id().' ainda não usada.');
+        } catch (\Throwable $e) {
+            $add('numeração', null, 'Não foi possível conferir a DPS: '.$e->getMessage());
+        }
+
+        if (isset($fields['prest']['IM'])) {
+            $add('inscrição municipal', null, 'A DPS leva a inscrição municipal do prestador: municípios sem dados complementares no CNC recusam (E0120, ex.: Maceió).');
+        }
+
+        return $results;
     }
 
     /** DPS com ambiente, versão do aplicativo e data de emissão preenchidos. */
@@ -289,19 +376,19 @@ class NfseClient
     /**
      * Alíquota do serviço no município numa competência.
      *
-     * @param  string  $serviceCode  código de tributação nacional + municipal (ex.: 01.05.01.001 ou 010501001)
+     * @param  string  $serviceCode  código nacional + municipal, em qualquer formato (01.05.01.001, 010501001, ou 010501 com $municipalCode)
      * @param  string  $competence  AAAA-MM-DD
-     * @return array<string, mixed>
+     * @return array<string, mixed> ['aliquotas' => [código => [...]]] (vazio = serviço não administrado pelo município)
      */
-    public function municipalRate(string $cityIbgeCode, string $serviceCode, string $competence): array
+    public function municipalRate(string $cityIbgeCode, string $serviceCode, string $competence, ?string $municipalCode = null): array
     {
-        return $this->parameters("{$cityIbgeCode}/{$serviceCode}/{$competence}/aliquota");
+        return $this->parameters("{$cityIbgeCode}/".ServiceCodes::parameterCode($serviceCode, $municipalCode)."/{$competence}/aliquota");
     }
 
     /** @return array<string, mixed> */
-    public function municipalRateHistory(string $cityIbgeCode, string $serviceCode): array
+    public function municipalRateHistory(string $cityIbgeCode, string $serviceCode, ?string $municipalCode = null): array
     {
-        return $this->parameters("{$cityIbgeCode}/{$serviceCode}/historicoaliquotas");
+        return $this->parameters("{$cityIbgeCode}/".ServiceCodes::parameterCode($serviceCode, $municipalCode).'/historicoaliquotas');
     }
 
     /** @return array<string, mixed> */
@@ -311,9 +398,9 @@ class NfseClient
     }
 
     /** @return array<string, mixed> */
-    public function specialRegimes(string $cityIbgeCode, string $serviceCode, string $competence): array
+    public function specialRegimes(string $cityIbgeCode, string $serviceCode, string $competence, ?string $municipalCode = null): array
     {
-        return $this->parameters("{$cityIbgeCode}/{$serviceCode}/{$competence}/regimes_especiais");
+        return $this->parameters("{$cityIbgeCode}/".ServiceCodes::parameterCode($serviceCode, $municipalCode)."/{$competence}/regimes_especiais");
     }
 
     /** @return array<string, mixed> */

@@ -15,6 +15,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Simulação
+    |--------------------------------------------------------------------------
+    |
+    | true: nada vai para o Sistema Nacional (SimulatedNfseClient). A DPS é
+    | montada, validada e assinada de verdade; a NFS-e devolvida é gerada
+    | localmente, marcada como simulação. Por chamada:
+    | NfseNacional::client($cert, $ambiente, simulate: true).
+    |
+    */
+    'simulate' => (bool) env('NFSE_NACIONAL_SIMULATE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Leiaute da DPS
     |--------------------------------------------------------------------------
     |

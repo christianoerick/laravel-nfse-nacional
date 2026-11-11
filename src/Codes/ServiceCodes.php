@@ -66,6 +66,20 @@ final class ServiceCodes
         return str_pad(preg_replace('/\D/', '', $code) ?? '', 6, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Código da parametrização municipal: nacional + municipal com pontos
+     * ("010501" + "001" → "01.05.01.001"). É o formato que as consultas de
+     * alíquota/regimes aceitam; sem o municipal, usa "000".
+     */
+    public static function parameterCode(string $code, ?string $municipal = null): string
+    {
+        $digits = preg_replace('/\D/', '', $code) ?? '';
+        $national = substr(str_pad(substr($digits, 0, 6), 6, '0', STR_PAD_LEFT), 0, 6);
+        $municipal = $municipal !== null && $municipal !== '' ? $municipal : (strlen($digits) >= 9 ? substr($digits, 6, 3) : '000');
+
+        return self::format($national).'.'.str_pad(preg_replace('/\D/', '', $municipal) ?? '', 3, '0', STR_PAD_LEFT);
+    }
+
     /** "010501" → "01.05.01". */
     public static function format(string $code): string
     {

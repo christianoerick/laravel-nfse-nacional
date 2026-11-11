@@ -165,7 +165,7 @@ $client->distribution($nsu);         // documentos por NSU (ADN)
 
 ```php
 $client->municipalAgreement('2704302')->usesNationalIssuer();   // dá para emitir pelo Sefin?
-$client->municipalRate('2704302', '01.05.01.001', '2026-11-01');
+$client->municipalRate('2704302', '010501', '2026-11-01', municipalCode: '001');   // consulta 01.05.01.001
 $client->specialRegimes('2704302', '01.05.01.001', '2026-11-01');
 $client->withholdings('2704302', '2026-11-01');
 ```
@@ -202,6 +202,30 @@ São 39 enums, um para cada lista fechada do leiaute: regimes, tributação e re
 ## Ambiente de testes
 
 Use `NFSE_NACIONAL_ENVIRONMENT=restricted`, ou passe o ambiente por chamada: `NfseNacional::client($certificado, 'restricted')`.
+
+## Testar sem produção
+
+**Validar sem emitir.** Monta a DPS e confere tudo o que dá para conferir sem gerar nota:
+- **No local:** certificado, XSD do leiaute em uso e assinatura.
+- **No Sistema Nacional, só leitura:** convênio do município, se o código de serviço está ativo no município (o que pega o E0312) e se a DPS já foi usada.
+
+```php
+foreach ($client->check($dps) as $item) {
+    // ['check' => 'serviço', 'ok' => false, 'message' => 'Código 01.05.01.001 não está administrado pelo município ...']
+}
+```
+
+**Simulação.** O `SimulatedNfseClient` monta, valida e assina a DPS de verdade, mas não manda nada para o Sistema Nacional:
+- devolve uma NFS-e gerada localmente, válida no XSD e assinada com o seu certificado;
+- a nota é marcada no `xOutInf` como **SIMULAÇÃO**;
+- aceita eventos.
+
+Serve para testar o fluxo inteiro de um sistema sem tocar em produção. Também resolve o caso de municípios sem convênio ativo na produção restrita, como Maceió, onde a restrita recusa com E0037 ou E0084.
+
+```php
+$client = NfseNacional::client($certificado, 'restricted', simulate: true);
+// ou NFSE_NACIONAL_SIMULATE=true para todos os clientes
+```
 
 ## Leiautes (NT 009)
 

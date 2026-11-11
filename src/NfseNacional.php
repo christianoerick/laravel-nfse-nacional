@@ -7,6 +7,7 @@ use ChristianoErick\NfseNacional\Codes\ServiceCodes;
 use ChristianoErick\NfseNacional\Danfse\DanfseRenderer;
 use ChristianoErick\NfseNacional\Enums\Environment;
 use ChristianoErick\NfseNacional\Http\NfseClient;
+use ChristianoErick\NfseNacional\Http\SimulatedNfseClient;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Closure;
 use SensitiveParameter;
@@ -27,11 +28,15 @@ class NfseNacional
         private readonly HttpFactory $http,
     ) {}
 
-    public function client(Certificate $certificate, Environment|string|int|null $environment = null): NfseClient
+    /**
+     * @param  bool|null  $simulate  true = SimulatedNfseClient (sem rede); null = config('nfse-nacional.simulate')
+     */
+    public function client(Certificate $certificate, Environment|string|int|null $environment = null, ?bool $simulate = null): NfseClient
     {
         $config = $this->config();
+        $class = ($simulate ?? (bool) ($config['simulate'] ?? false)) ? SimulatedNfseClient::class : NfseClient::class;
 
-        return new NfseClient(
+        return new $class(
             $certificate,
             Environment::resolve($environment ?? ($config['environment'] ?? 'production')),
             $config,
