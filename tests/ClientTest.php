@@ -147,6 +147,19 @@ class ClientTest extends TestCase
         $this->assertStringContainsString('<chSubstituta>', $xml);
     }
 
+    public function test_every_author_event_is_xsd_valid(): void
+    {
+        foreach (\ChristianoErick\NfseNacional\Events\AuthorEvents::all() as $event) {
+            $reason = $event['reasons'][0]['value'] ?? null;
+            $description = $event['description'] === 'none' ? null : 'Justificativa com mais de quinze caracteres.';
+            $xml = $this->client()->signEvent(EventRequest::fromCode(self::KEY, $event['code'], $reason, $description));
+
+            (new SchemaValidator)->validate($xml);
+            $this->assertStringContainsString('<'.$event['code'].'>', $xml, $event['code']);
+            $this->assertStringContainsString('Id="PRE'.self::KEY.ltrim($event['code'], 'e').'"', $xml);
+        }
+    }
+
     public function test_municipal_agreement_and_danfse(): void
     {
         Http::fake([

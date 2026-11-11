@@ -2,7 +2,9 @@
 
 namespace ChristianoErick\NfseNacional\Events;
 
+use ChristianoErick\NfseNacional\Enums\AnalysisCancellationReason;
 use ChristianoErick\NfseNacional\Enums\CancellationReason;
+use ChristianoErick\NfseNacional\Enums\RejectionReason;
 use ChristianoErick\NfseNacional\Enums\Environment;
 use ChristianoErick\NfseNacional\Enums\EventCode;
 use ChristianoErick\NfseNacional\Enums\ReplacementReason;
@@ -65,6 +67,68 @@ final class EventRequest
             'xMotivo' => $description,
             'chSubstituta' => $replacementAccessKey,
         ], fn ($value) => $value !== null && $value !== ''));
+    }
+
+    /**
+     * Solicitação de análise fiscal para cancelamento (e101103): quando o
+     * município não deixa o emitente cancelar direto (ex.: E0823, valor acima
+     * do permitido). A prefeitura defere (e105104) ou indefere (e105105).
+     */
+    public static function analysisCancellation(string $accessKey, AnalysisCancellationReason|string|int $reason, string $description): self
+    {
+        return new self($accessKey, '101103', [
+            'xDesc' => 'Solicitação de Análise Fiscal para Cancelamento de NFS-e',
+            'cMotivo' => $reason,
+            'xMotivo' => $description,
+        ]);
+    }
+
+    /** Manifestação: confirmação do prestador (e202201). */
+    public static function providerConfirmation(string $accessKey): self
+    {
+        return new self($accessKey, '202201', ['xDesc' => 'Manifestação de NFS-e - Confirmação do Prestador']);
+    }
+
+    /** Manifestação: rejeição do prestador (e202205). */
+    public static function providerRejection(string $accessKey, RejectionReason|string|int $reason, ?string $description = null): self
+    {
+        return new self($accessKey, '202205', array_filter([
+            'xDesc' => 'Manifestação de NFS-e - Rejeição do Prestador',
+            'cMotivo' => $reason,
+            'xMotivo' => $description,
+        ], fn ($value) => $value !== null && $value !== ''));
+    }
+
+    /** Manifestação: confirmação do tomador (e203202), para nota recebida. */
+    public static function takerConfirmation(string $accessKey): self
+    {
+        return new self($accessKey, '203202', ['xDesc' => 'Manifestação de NFS-e - Confirmação do Tomador']);
+    }
+
+    /** Manifestação: rejeição do tomador (e203206), para nota recebida. */
+    public static function takerRejection(string $accessKey, RejectionReason|string|int $reason, ?string $description = null): self
+    {
+        return new self($accessKey, '203206', array_filter([
+            'xDesc' => 'Manifestação de NFS-e - Rejeição do Tomador',
+            'cMotivo' => $reason,
+            'xMotivo' => $description,
+        ], fn ($value) => $value !== null && $value !== ''));
+    }
+
+    /**
+     * Pelo código do catálogo (AuthorEvents): e101101, e101103, e202201...
+     */
+    public static function fromCode(string $accessKey, string $code, string|int|null $reason = null, ?string $description = null): self
+    {
+        return match ('e'.ltrim($code, 'e')) {
+            'e101101' => self::cancellation($accessKey, (string) $reason, (string) $description),
+            'e101103' => self::analysisCancellation($accessKey, (string) $reason, (string) $description),
+            'e202201' => self::providerConfirmation($accessKey),
+            'e202205' => self::providerRejection($accessKey, (string) $reason, $description),
+            'e203202' => self::takerConfirmation($accessKey),
+            'e203206' => self::takerRejection($accessKey, (string) $reason, $description),
+            default => throw new InvalidDataException("Evento {$code} sem atalho: use EventRequest::make() com os campos do leiaute."),
+        };
     }
 
     /** CNPJ/CPF do autor (padrão: o do certificado usado no envio). */

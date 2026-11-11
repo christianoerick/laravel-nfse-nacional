@@ -52,6 +52,8 @@ const OVERRIDES = [
     'IssqnWithholding' => ['1' => ['NotWithheld'], '2' => ['WithheldByTaker'], '3' => ['WithheldByIntermediary']],
     'TotalTaxIndicator' => ['0' => ['DoNotInform', 'Não informar (Simples Nacional / Decreto 8.264/2014)']],
     'CancellationReason' => ['1' => ['IssueError'], '2' => ['ServiceNotProvided'], '9' => ['Other']],
+    'AnalysisCancellationReason' => ['1' => ['IssueError'], '2' => ['ServiceNotProvided'], '9' => ['Other', 'Outros']],
+    'RejectionReason' => ['1' => ['Duplicate'], '2' => ['AlreadyIssuedByTaker'], '3' => ['NoTaxableEvent'], '4' => ['TaxResponsibilityError'], '5' => ['ValueOrServiceError'], '9' => ['Other']],
     'ReplacementReason' => ['01' => ['SimplesExclusion'], '02' => ['SimplesInclusion'], '03' => ['RetroactiveImmunityInclusion'], '04' => ['RetroactiveImmunityExclusion'], '05' => ['RejectedByTakerOrIntermediary'], '99' => ['Other']],
     'IssqnSuspension' => ['1' => ['JudicialDecision'], '2' => ['AdministrativeProceeding']],
     'EventCode' => [
@@ -125,6 +127,8 @@ $enums = [
     'IssuerRole' => ['TSEmitenteDPS', 'Quem emite a DPS (tpEmit).'],
     'TakerIssueReason' => ['TSMotivoEmisTI', 'Motivo da emissão pelo tomador/intermediário (cMotivoEmisTI).'],
     'CancellationReason' => ['TSCodJustCanc', 'Motivo do cancelamento (e101101/cMotivo).'],
+    'AnalysisCancellationReason' => ['TSCodJustAnaliseFiscalCanc', 'Motivo da solicitação de análise fiscal para cancelamento (e101103/cMotivo).'],
+    'RejectionReason' => ['TSCodMotivoRejeicao', 'Motivo da rejeição da NFS-e pelo prestador/tomador/intermediário (e202205, e203206, e204207/cMotivo).'],
     'ReplacementReason' => ['TSCodJustSubst', 'Motivo da substituição (subst/cMotivo e e105102/cMotivo).'],
     'NoNifReason' => ['TSCodNaoNIF', 'Motivo de não informar o NIF do estrangeiro (cNaoNIF).'],
     'State' => ['TSUF', 'Unidade da federação (UF).'],

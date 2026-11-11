@@ -139,6 +139,13 @@ $client->emitOrRecover($nova->with('subst', [
     'xMotivo' => 'Correção do valor do serviço.',
 ]));
 
+// Município que limita o cancelamento direto (E0823): pedido de análise fiscal (e101103).
+$client->registerEvent(EventRequest::analysisCancellation($chave, AnalysisCancellationReason::IssueError, 'Nota emitida com valor errado.'));
+
+// Catálogo para a tela "Registrar evento" (evento, motivos, justificativa):
+AuthorEvents::all('provider');   // e101101, e101103, e202201, e202205
+$client->registerEvent(EventRequest::fromCode($chave, 'e202205', '9', 'Justificativa...'));
+
 // Qualquer outro evento, pelos nomes oficiais:
 $client->registerEvent(EventRequest::make($chave, 'e202201', [...]));
 ```

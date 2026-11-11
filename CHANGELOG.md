@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5 - 2026-11-11
+
+- Eventos do contribuinte: análise fiscal para cancelamento (e101103), confirmação/rejeição do prestador (e202201/e202205) e do tomador (e203202/e203206); `EventRequest::fromCode()` e o catálogo `AuthorEvents` com os motivos.
+- Enums `AnalysisCancellationReason` e `RejectionReason`.
+
 ## 0.1.4 - 2026-11-11
 
 - DANFSe igual ao oficial: série sem zeros à esquerda, descrição municipal do serviço (xTribMun), "Simples Nacional" por extenso, "Operação Tributável" e totais aproximados com traços no Simples. Conferido com o PDF do portal.
