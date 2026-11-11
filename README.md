@@ -2,7 +2,7 @@
 
 Emissão de **NFS-e pelo Sistema Nacional (Sefin Nacional / ADN)** em Laravel 12 e 13, sem bibliotecas de terceiros para XML ou assinatura.
 
-- **DPS completa** no leiaute oficial **1.01**. Todos os campos do XSD são aceitos pelos nomes oficiais das tags, inclusive IBS/CBS, comércio exterior, obra, evento, deduções e benefícios. A ordem dos campos é tirada do XSD, e a DPS é validada localmente antes do envio.
+- **DPS completa** nos leiautes oficiais **1.01** e **NT 009** (troca automática em 01/12/2026). Todos os campos do XSD são aceitos pelos nomes oficiais das tags, inclusive IBS/CBS, comércio exterior, obra, evento, deduções e benefícios. A ordem dos campos é tirada do XSD, e a DPS é validada localmente antes do envio.
 - **Assinatura XMLDSig** com certificado A1 (.pfx), em RSA-SHA1 (padrão do manual) ou RSA-SHA256. Abre também .pfx antigo com cifra RC2.
 - **Emissão segura contra duplicidade.** `emitOrRecover()` consulta a DPS antes de reenviar.
 - **Consultas e eventos:** NFS-e por chave, DPS por Id, cancelamento (e101101), cancelamento por substituição (e105102) e qualquer outro evento do leiaute.
@@ -203,11 +203,30 @@ São 39 enums, um para cada lista fechada do leiaute: regimes, tributação e re
 
 Use `NFSE_NACIONAL_ENVIRONMENT=restricted`, ou passe o ambiente por chamada: `NfseNacional::client($certificado, 'restricted')`.
 
+## Leiautes (NT 009)
+
+O pacote traz os dois pacotes oficiais de XSD e escolhe sozinho qual usar, pela data e pelo ambiente:
+
+| Leiaute | Esquemas oficiais | Produção restrita | Produção |
+|---|---|---|---|
+| `v1.01` | 09/02/2026 | até 19/10/2026 | até 30/11/2026 |
+| `nt009` (NT SE/CGNFS-e 009 v1.01) | 20/10/2026 | desde 20/10/2026 | a partir de 01/12/2026 |
+
+```dotenv
+NFSE_NACIONAL_LAYOUT=auto                  # ou v1.01 / nt009 para fixar
+NFSE_NACIONAL_NT009_PRODUCTION=2026-12-01  # se o governo mudar a data
+NFSE_NACIONAL_NT009_RESTRICTED=2026-10-20
+```
+
+O mesmo array de DPS serve nos dois leiautes. O pacote coloca `finNFSe` no lugar certo (no `infDPS` na NT 009, com padrão `0` = regular; em `IBSCBS` no 1.01) e move `CST`/`cClassTrib` do IBS/CBS entre `trib` e `trib/gIBSCBS`. Grupos que não têm equivalente direto geram erro explicando o que usar: `vDedRed` (1.01) × `vAjusteBC` (NT 009), `gReeRepRes` e `bensMoveis`.
+
+`$client->layout()` diz qual leiaute aquele cliente usa. Campos de cada um: [`docs/CAMPOS.md`](docs/CAMPOS.md) (NT 009) e [`docs/CAMPOS-v1.01.md`](docs/CAMPOS-v1.01.md).
+
 ## Sobre os XSD
 
-Os esquemas oficiais (leiaute 1.01) ficam em `resources/schemas`. Há um ajuste: o padrão de `TSSerieDPS` vem como `^0{0,4}\d{1,5}$`, mas em XSD `^` e `$` são literais, então o libxml recusaria qualquer série. Na nossa cópia, o padrão é `0{0,4}\d{1,5}`.
+Os esquemas oficiais ficam em `resources/schemas/{v1.01,nt009}`, baixados do portal gov.br/nfse. Há um ajuste só no `v1.01`: o padrão de `TSSerieDPS` vem como `^0{0,4}\d{1,5}$`, mas em XSD `^` e `$` são literais, então o libxml recusaria qualquer série; na nossa cópia é `0{0,4}\d{1,5}`. O da NT 009 já veio corrigido.
 
-Quando sair um XSD novo, coloque-o em `resources/schemas` e rode `composer generate`. Isso regera o mapa de ordem dos campos, os enums e o `docs/CAMPOS.md`.
+Quando sair um XSD novo, coloque-o numa pasta em `resources/schemas`, registre em `tools/generate.php` e em `Support\Layout`, e rode `composer generate`. Isso regera os mapas, os enums e a documentação dos campos.
 
 ## Testes
 

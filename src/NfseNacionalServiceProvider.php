@@ -14,7 +14,7 @@ class NfseNacionalServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/nfse-nacional.php', 'nfse-nacional');
 
         $this->app->singleton(NfseNacional::class, fn ($app) => new NfseNacional(
-            (array) $app['config']->get('nfse-nacional', []),
+            fn () => (array) $app['config']->get('nfse-nacional', []),
             $app->make(HttpFactory::class),
         ));
     }

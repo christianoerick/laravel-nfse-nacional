@@ -37,9 +37,9 @@ final class NfseDocument
     /** XML gzip+base64, como vem da API. */
     public static function fromGzipBase64(string $payload): self
     {
-        $xml = gzdecode((string) base64_decode($payload, true));
+        $xml = \ChristianoErick\NfseNacional\Http\NfseClient::unpack($payload);
 
-        if ($xml === false) {
+        if ($xml === '') {
             throw new InvalidDataException('Conteúdo compactado da NFS-e inválido.');
         }
 

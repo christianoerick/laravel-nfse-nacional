@@ -186,9 +186,10 @@ class DanfseRenderer
             'cofins' => self::money(is_array($pisCofins) ? ($pisCofins['vCofins'] ?? null) : null),
             'federal_withholding' => is_array($pisCofins) && isset($pisCofins['tpRetPisCofins']) ? $pisCofins['tpRetPisCofins'].' - '.$label(FederalWithholding::class, $pisCofins['tpRetPisCofins']) : '-',
             'ibs' => [
-                'cst' => ($g($dps.'IBSCBS.valores.trib.gIBSCBS.CST') ?? '-').' / '.($g($dps.'IBSCBS.valores.trib.gIBSCBS.cClassTrib') ?? '-'),
+                // 1.01: dentro de gIBSCBS; NT 009: direto em trib.
+                'cst' => ($g($dps.'IBSCBS.valores.trib.CST') ?? $g($dps.'IBSCBS.valores.trib.gIBSCBS.CST') ?? '-').' / '.($g($dps.'IBSCBS.valores.trib.cClassTrib') ?? $g($dps.'IBSCBS.valores.trib.gIBSCBS.cClassTrib') ?? '-'),
                 'operation' => implode(' / ', [$g($dps.'IBSCBS.cIndOp') ?? '-', $g($ibs.'cLocalidadeIncid') ?? '-', $g($ibs.'xLocalidadeIncid') ?? '-', self::STATES[substr((string) $g($ibs.'cLocalidadeIncid'), 0, 2)] ?? '-']),
-                'reductions' => self::money($g($ibs.'valores.vCalcReeRepRes') ?? '0', zero: true),
+                'reductions' => self::money($g($ibs.'valores.vCalcAjusteBCIBSCBS') ?? $g($ibs.'valores.vCalcReeRepRes') ?? '0', zero: true),
                 'base' => self::money($g($ibs.'valores.vBC')),
                 'rate_reduction' => implode(' / ', [self::percent($g($ibs.'valores.uf.pRedAliqUF')), self::percent($g($ibs.'valores.mun.pRedAliqMun')), self::percent($g($ibs.'valores.fed.pRedAliqCBS'))]),
                 'rates' => self::percent($g($ibs.'valores.uf.pIBSUF')).' / '.self::percent($g($ibs.'valores.mun.pIBSMun')),

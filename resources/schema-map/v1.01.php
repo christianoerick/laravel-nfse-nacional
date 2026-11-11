@@ -1,6 +1,6 @@
 <?php
 
-// Gerado por tools/generate.php a partir dos XSD oficiais. Não editar à mão.
+// Gerado por tools/generate.php a partir dos XSD oficiais (leiaute 1.01 (esquemas oficiais de 09/02/2026; produção até 30/11/2026)). Não editar à mão.
 
 return [
     'roots' => [

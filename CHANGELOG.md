@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 - 2026-11-11
+
+- **NT SE/CGNFS-e 009 v1.01**: XSD oficiais de 20/10/2026 ao lado dos de 09/02/2026 (`resources/schemas/{v1.01,nt009}`). Escolha automática por data e ambiente (produção restrita desde 20/10/2026, produção a partir de 01/12/2026), configurável (`layout`, `layout_switch`).
+- O mesmo array de DPS funciona nos dois leiautes: `finNFSe` e `CST`/`cClassTrib` do IBS/CBS vão para o lugar certo; `vDedRed`/`vAjusteBC`, `gReeRepRes` e `bensMoveis` geram erro com a orientação.
+- `NfseClient::layout()`, `Dps::toXml($layout)`, `XmlBuilder`/`SchemaValidator` por leiaute. Enum `BaseAdjustmentType` (ajuste de base da NT 009).
+- Consulta de evento (`event()`): lê a resposta real do Sefin (lista `eventos`, `arquivoXml` em base64 duplo). `NfseClient::unpack()` para qualquer XML das respostas.
+- DANFSe lê IBS/CBS nos dois leiautes.
+- A configuração é lida a cada cliente (mudanças em runtime valem).
+
 ## 0.1.5 - 2026-11-11
 
 - Eventos do contribuinte: análise fiscal para cancelamento (e101103), confirmação/rejeição do prestador (e202201/e202205) e do tomador (e203202/e203206); `EventRequest::fromCode()` e o catálogo `AuthorEvents` com os motivos.

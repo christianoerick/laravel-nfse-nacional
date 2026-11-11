@@ -9,6 +9,7 @@ use ChristianoErick\NfseNacional\Exceptions\ConnectionException;
 use ChristianoErick\NfseNacional\Exceptions\RejectedException;
 use ChristianoErick\NfseNacional\Facades\NfseNacional;
 use ChristianoErick\NfseNacional\Http\NfseClient;
+use ChristianoErick\NfseNacional\Support\Layout;
 use ChristianoErick\NfseNacional\Xml\SchemaValidator;
 use ChristianoErick\NfseNacional\Xml\XmlSigner;
 use Illuminate\Http\Client\Request;
@@ -58,7 +59,9 @@ class ClientTest extends TestCase
 
         Http::assertSent(function (Request $request) {
             $dps = gzdecode(base64_decode($request['dpsXmlGZipB64']));
-            (new SchemaValidator)->validate($dps);
+            // Produção restrita já usa a NT 009 (finNFSe no infDPS).
+            (new SchemaValidator(Layout::Nt009))->validate($dps);
+            $this->assertStringContainsString('<finNFSe>0</finNFSe>', $dps);
 
             // Sem a declaração UTF-8 o Sefin recusa com E1229.
             $this->assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?><DPS ', $dps);
@@ -145,6 +148,22 @@ class ClientTest extends TestCase
 
         (new SchemaValidator)->validate($xml);
         $this->assertStringContainsString('<chSubstituta>', $xml);
+    }
+
+    public function test_reads_single_event_with_double_base64_payload(): void
+    {
+        // Formato real do Sefin (conferido em produção): lista "eventos" com arquivoXml em base64(base64(gzip)).
+        Http::fake(['*/nfse/'.self::KEY.'/eventos/101103/1' => Http::response(['eventos' => [[
+            'chaveAcesso' => self::KEY, 'tipoEvento' => 101103, 'numeroPedidoRegistroEvento' => 1,
+            'arquivoXml' => base64_encode(NfseClient::pack('<evento>ok</evento>')),
+        ]]])]);
+
+        $event = $this->client()->event(self::KEY, 'e101103');
+
+        $this->assertSame('<evento>ok</evento>', $event?->eventXml);
+        $this->assertSame(101103, $event->response['evento']['tipoEvento']);
+        $this->assertSame('<a/>', NfseClient::unpack(NfseClient::pack('<a/>')));
+        $this->assertSame('<a/>', NfseClient::unpack('<a/>'));
     }
 
     public function test_every_author_event_is_xsd_valid(): void

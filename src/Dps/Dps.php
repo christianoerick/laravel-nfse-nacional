@@ -6,6 +6,7 @@ use ChristianoErick\NfseNacional\Enums\Environment;
 use ChristianoErick\NfseNacional\Exceptions\InvalidDataException;
 use ChristianoErick\NfseNacional\Support\Document;
 use ChristianoErick\NfseNacional\Support\DpsId;
+use ChristianoErick\NfseNacional\Support\Layout;
 use ChristianoErick\NfseNacional\Xml\XmlBuilder;
 use ChristianoErick\NfseNacional\Xml\XmlReader;
 use DateTimeInterface;
@@ -181,19 +182,21 @@ final class Dps
      *
      * @return array<string, mixed>
      */
-    public function toArray(): array
+    public function toArray(?Layout $layout = null): array
     {
-        $infDps = $this->infDps;
+        $infDps = LayoutAdapter::adapt($this->infDps, $layout ?? Layout::current());
         $infDps['serie'] = DpsId::series((string) $this->scalar($infDps['serie'] ?? ''));
         $infDps['nDPS'] = (string) $this->scalar($infDps['nDPS'] ?? '');
 
         return ['@versao' => $this->version, 'infDPS' => ['@Id' => $this->id()] + $infDps];
     }
 
-    /** XML sem assinatura. */
-    public function toXml(): string
+    /** XML sem assinatura, no leiaute informado (padrão: o de produção hoje). */
+    public function toXml(?Layout $layout = null): string
     {
-        return (new XmlBuilder)->toXml('DPS', $this->toArray());
+        $layout ??= Layout::current();
+
+        return (new XmlBuilder($layout))->toXml('DPS', $this->toArray($layout));
     }
 
     private function scalar(mixed $value): mixed

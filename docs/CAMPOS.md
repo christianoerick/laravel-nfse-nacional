@@ -1,6 +1,6 @@
-# Mapa completo de campos
+# Mapa completo de campos — NT SE/CGNFS-e 009 v1.01 (esquemas oficiais de 20/10/2026; produção restrita desde 20/10/2026 e produção a partir de 01/12/2026)
 
-Gerado por `tools/generate.php` a partir dos XSD oficiais (leiaute 1.01). Use os nomes das tags como chaves do array; a ordem não importa, o `XmlBuilder` segue a do XSD.
+Gerado por `tools/generate.php` a partir dos XSD oficiais. Use os nomes das tags como chaves do array; a ordem não importa, o `XmlBuilder` segue a do XSD do leiaute em uso.
 
 Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. Grupos marcados com **(escolha)** aceitam só um dos filhos.
 
@@ -10,23 +10,24 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 |---|---|---|---|---|
 | `DPS/@versao` | 1-1 | TVerNFSe | maxLength=4, pattern=1\.00\|1\.01 |  |
 | **`DPS/infDPS`** | 1-1 | grupo | |  |
-| `DPS/infDPS/@Id` | 1-1 | TSIdDPS | maxLength=45, pattern=DPS[0-9]{42} |  |
+| `DPS/infDPS/@Id` | 1-1 | TSIdDPS | maxLength=45, pattern=DPS[0-9]{7}(1[0-9]{14}\|2[0-9A-Z]{14})[0-9]{20} |  |
 | `DPS/infDPS/tpAmb` | 1-1 | TSTipoAmbiente | `1` Produção<br>`2` Homologação<br>→ `Enums\Environment` | Identificação do Ambiente: 1 - Produção; 2 - Homologação |
-| `DPS/infDPS/dhEmi` | 1-1 | TSDateTimeUTC | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30)))))T(20\|21\|22\|23\|[0-1]\d):[0-5]\d:[0-5]\d([\-,\+](0[0-9]\|10\|11):00\|([\+](12):00)) | Data e hora da emissão do DPS. Data e hora no formato UTC (Universal Coordinated Time): AAAA-MM-DDThh:mm:ssTZD |
+| `DPS/infDPS/dhEmi` | 1-1 | TSDateTimeUTC | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[13-9])\|(1[0-2]))-(29\|30)))))T(20\|21\|22\|23\|[0-1]\d):[0-5]\d:[0-5]\d([-+](0[0-9]\|10\|11):00\|([\+](12):00)) | Data e hora da emissão do DPS. Data e hora no formato UTC (Universal Coordinated Time): AAAA-MM-DDThh:mm:ssTZD |
 | `DPS/infDPS/verAplic` | 1-1 | TSVerAplic | minLength=1, maxLength=20 | Versão do aplicativo que gerou o DPS |
-| `DPS/infDPS/serie` | 1-1 | TSSerieDPS | maxLength=5, pattern=0{0,4}\d{1,5} | Número do equipamento emissor do DPS ou série do DPS |
+| `DPS/infDPS/serie` | 1-1 | TSSerieDPS | maxLength=5, pattern=[0-9]{1,4}\|[0-8][0-9]{4} | Número do equipamento emissor do DPS ou série do DPS |
 | `DPS/infDPS/nDPS` | 1-1 | TSNumDPS | maxLength=15, pattern=[1-9]{1}[0-9]{0,14} | Número do DPS |
 | `DPS/infDPS/dCompet` | 1-1 | TSData | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30))))) | Data em que se iniciou a prestação do serviço: Dia, mês e ano (AAAAMMDD) |
 | `DPS/infDPS/tpEmit` | 1-1 | TSEmitenteDPS | `1` Prestador<br>`2` Tomador<br>`3` Intermediário<br>→ `Enums\IssuerRole` | Emitente da DPS: 1 - Prestador; 2 - Tomador; 3 - Intermediário |
 | `DPS/infDPS/cMotivoEmisTI` | 0-1 | TSMotivoEmisTI | `1` Importação de Serviço<br>`2` Tomador/Intermediário obrigado a emitir NFS-e por legislação municipal<br>`3` Tomador/Intermediário emitindo NFS-e por recusa de emissão pelo prestador<br>`4` Tomador/Intermediário emitindo por rejeitar a NFS-e emitida pelo prestador<br>→ `Enums\TakerIssueReason` | Motivo da Emissão da DPS pelo Tomador/Intermediário: 1 - Importação de Serviço; 2 - Tomador/Intermediário obrigado a emitir NFS-e por legislação municipal; 3 - Tomador/Intermediário emitindo NFS-e por recusa de emissão pelo prestador; 4 - Tomador/Intermediário emitindo por rejeitar a NFS-e emitida pelo prestador; |
-| `DPS/infDPS/chNFSeRej` | 0-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{50} | Chave de Acesso da NFS-e rejeitada pelo Tomador/Intermediário. |
+| `DPS/infDPS/finNFSe` | 1-1 | TSRTCFinNFSe | `0` NFS-e regular<br>→ `Enums\NfsePurpose` | Indicador da finalidade da emissão de NFS-e |
+| `DPS/infDPS/chNFSeRej` | 0-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{6}([0-9A-Z]{14})[0-9]{30} | Chave de Acesso da NFS-e rejeitada pelo Tomador/Intermediário. |
 | `DPS/infDPS/cLocEmi` | 1-1 | TSCodMunIBGE | pattern=[0-9]{7} | O código de município utilizado pelo Sistema Nacional NFS-e é o código definido para cada município pertencente ao ""Anexo V – Tabela de Código de Municípios do IBGE"", que consta ao final do Manual de Orientação ao Contribuinte do ISSQN para a Sefin Nacional NFS-e. O município emissor da NFS-e é aquele município em que o emitente da DPS está cadastrado e autorizado a "emitir uma NFS-e", ou seja, emitir uma DPS para que o sistema nacional valide as informações nela prestadas e gere a NFS-e correspondente para o emitente. Para que o sistema nacional emita a NFS-e o município emissor deve ser c… |
 | **`DPS/infDPS/subst`** | 0-1 | grupo | | Dados da NFS-e a ser substituída |
-| `DPS/infDPS/subst/chSubstda` | 1-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{50} | Chave de acesso da NFS-e a ser substituída |
+| `DPS/infDPS/subst/chSubstda` | 1-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{6}([0-9A-Z]{14})[0-9]{30} | Chave de acesso da NFS-e a ser substituída |
 | `DPS/infDPS/subst/cMotivo` | 1-1 | TSCodJustSubst | `01` Desenquadramento de NFS-e do Simples Nacional<br>`02` Enquadramento de NFS-e no Simples Nacional<br>`03` Inclusão Retroativa de Imunidade/Isenção para NFS-e<br>`04` Exclusão Retroativa de Imunidade/Isenção para NFS-e<br>`05` Rejeição de NFS-e pelo tomador ou pelo intermediário se responsável pelo recolhimento do tributo<br>`99` Outros<br>→ `Enums\ReplacementReason` | Código de justificativa para substituição de NFS-e: 01 - Desenquadramento de NFS-e do Simples Nacional; 02 - Enquadramento de NFS-e no Simples Nacional; 03 - Inclusão Retroativa de Imunidade/Isenção para NFS-e; 04 - Exclusão Retroativa de Imunidade/Isenção para NFS-e; 05 - Rejeição de NFS-e pelo tomador ou pelo intermediário se responsável pelo recolhimento do tributo; 99 - Outros; |
 | `DPS/infDPS/subst/xMotivo` | 0-1 | TSMotivo | minLength=15, maxLength=255 | Descrição do motivo da substituição da NFS-e |
 | **`DPS/infDPS/prest`** | 1-1 | grupo | | Grupo de informações do DPS relativas ao Prestador de Serviços |
-| `DPS/infDPS/prest/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9]{14} | Número do CNPJ **(escolha)** |
+| `DPS/infDPS/prest/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9A-Z]{14} | Número do CNPJ **(escolha)** |
 | `DPS/infDPS/prest/CPF` | 0-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | Número do CPF **(escolha)** |
 | `DPS/infDPS/prest/NIF` | 0-1 | TSNIF | minLength=1, maxLength=40 | Número de Identificação Fiscal fornecido por órgão de administração tributária no exterior **(escolha)** |
 | `DPS/infDPS/prest/cNaoNIF` | 0-1 | TSCodNaoNIF | `0` Não informado na nota de origem<br>`1` Dispensado do NIF<br>`2` Não exigência do NIF<br>→ `Enums\NoNifReason` | Motivo para não informação do NIF: 0 - Não informado na nota de origem; 1 - Dispensado do NIF; 2 - Não exigência do NIF; **(escolha)** |
@@ -53,13 +54,13 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | `DPS/infDPS/prest/regTrib/regApTribSN` | 0-1 | TSRegimeApuracaoSimpNac | `1` Regime de apuração dos tributos federais e municipal pelo SN<br>`2` Regime de apuração dos tributos federais pelo SN e ISSQN por fora do SN conforme respectiva legislação municipal do tributo<br>`3` Regime de apuração dos tributos federais e municipal por fora do SN conforme respectivas legislações federal e municipal de cada tributo<br>→ `Enums\SimplesNacionalRegime` | Opção para que o contribuinte optante pelo Simples Nacional ME/EPP (opSimpNac = 3) possa indicar, ao emitir o documento fiscal, em qual regime de apuração os tributos federais e municipal estão inseridos, caso tenha ultrapassado algum sublimite ou limite definido para o Simples Nacional. 1 – Regime de apuração dos tributos federais e municipal pelo SN; 2 – Regime de apuração dos tributos federais pelo SN e ISSQN por fora do SN conforme respectiva legislação municipal do tributo; 3 – Regime de apuração dos tributos federais e municipal por fora do SN conforme respectivas legislações federal e … |
 | `DPS/infDPS/prest/regTrib/regEspTrib` | 1-1 | TSRegEspTrib | `0` Nenhum<br>`1` Ato Cooperado (Cooperativa)<br>`2` Estimativa<br>`3` Microempresa Municipal<br>`4` Notário ou Registrador<br>`5` Profissional Autônomo<br>`6` Sociedade de Profissionais<br>`9` Outros<br>→ `Enums\SpecialTaxRegime` | Tipos de Regimes Especiais de Tributação: 0 - Nenhum; 1 - Ato Cooperado (Cooperativa); 2 - Estimativa; 3 - Microempresa Municipal; 4 - Notário ou Registrador; 5 - Profissional Autônomo; 6 - Sociedade de Profissionais; 9 - Outros; |
 | **`DPS/infDPS/toma`** | 0-1 | grupo | | Grupo de informações do DPS relativas ao Tomador de Serviços |
-| `DPS/infDPS/toma/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9]{14} | Número do CNPJ **(escolha)** |
+| `DPS/infDPS/toma/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9A-Z]{14} | Número do CNPJ **(escolha)** |
 | `DPS/infDPS/toma/CPF` | 0-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | Número do CPF **(escolha)** |
 | `DPS/infDPS/toma/NIF` | 0-1 | TSNIF | minLength=1, maxLength=40 | Número de Identificação Fiscal fornecido por órgão de administração tributária no exterior **(escolha)** |
 | `DPS/infDPS/toma/cNaoNIF` | 0-1 | TSCodNaoNIF | `0` Não informado na nota de origem<br>`1` Dispensado do NIF<br>`2` Não exigência do NIF<br>→ `Enums\NoNifReason` | Motivo para não informação do NIF: 0 - Não informado na nota de origem; 1 - Dispensado do NIF; 2 - Não exigência do NIF; **(escolha)** |
 | `DPS/infDPS/toma/CAEPF` | 0-1 | TSCAEPF | maxLength=14, pattern=[0-9]{14} | Número do Cadastro de Atividade Econômica da Pessoa Física (CAEPF) |
 | `DPS/infDPS/toma/IM` | 0-1 | TSInscMun | maxLength=15, minLength=1 | Número da inscrição municipal |
-| `DPS/infDPS/toma/xNome` | 1-1 | TSNomeRazaoSocial | minLength=1, maxLength=300 | Nome/Nome Empresarial |
+| `DPS/infDPS/toma/xNome` | 0-1 | TSNomeRazaoSocial | minLength=1, maxLength=300 | Nome/Nome Empresarial |
 | **`DPS/infDPS/toma/end`** | 0-1 | grupo | | Dados de endereço |
 | **`DPS/infDPS/toma/end/endNac`** | 0-1 | grupo | | Grupo de informações específicas de endereço nacional **(escolha)** |
 | `DPS/infDPS/toma/end/endNac/cMun` | 1-1 | TSCodMunIBGE | pattern=[0-9]{7} | Código do município, conforme Tabela do IBGE |
@@ -76,13 +77,13 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | `DPS/infDPS/toma/fone` | 0-1 | TSTelefone | pattern=[0-9]{6,20} | Número do telefone do prestador: Preencher com o Código DDD + número do telefone. Nas operações com exterior é permitido informar o código do país + código da localidade + número do telefone) |
 | `DPS/infDPS/toma/email` | 0-1 | TSEmail | minLength=1, maxLength=80 | E-mail |
 | **`DPS/infDPS/interm`** | 0-1 | grupo | | Grupo de informações do DPS relativas ao Intermediário de Serviços |
-| `DPS/infDPS/interm/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9]{14} | Número do CNPJ **(escolha)** |
+| `DPS/infDPS/interm/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9A-Z]{14} | Número do CNPJ **(escolha)** |
 | `DPS/infDPS/interm/CPF` | 0-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | Número do CPF **(escolha)** |
 | `DPS/infDPS/interm/NIF` | 0-1 | TSNIF | minLength=1, maxLength=40 | Número de Identificação Fiscal fornecido por órgão de administração tributária no exterior **(escolha)** |
 | `DPS/infDPS/interm/cNaoNIF` | 0-1 | TSCodNaoNIF | `0` Não informado na nota de origem<br>`1` Dispensado do NIF<br>`2` Não exigência do NIF<br>→ `Enums\NoNifReason` | Motivo para não informação do NIF: 0 - Não informado na nota de origem; 1 - Dispensado do NIF; 2 - Não exigência do NIF; **(escolha)** |
 | `DPS/infDPS/interm/CAEPF` | 0-1 | TSCAEPF | maxLength=14, pattern=[0-9]{14} | Número do Cadastro de Atividade Econômica da Pessoa Física (CAEPF) |
 | `DPS/infDPS/interm/IM` | 0-1 | TSInscMun | maxLength=15, minLength=1 | Número da inscrição municipal |
-| `DPS/infDPS/interm/xNome` | 1-1 | TSNomeRazaoSocial | minLength=1, maxLength=300 | Nome/Nome Empresarial |
+| `DPS/infDPS/interm/xNome` | 0-1 | TSNomeRazaoSocial | minLength=1, maxLength=300 | Nome/Nome Empresarial |
 | **`DPS/infDPS/interm/end`** | 0-1 | grupo | | Dados de endereço |
 | **`DPS/infDPS/interm/end/endNac`** | 0-1 | grupo | | Grupo de informações específicas de endereço nacional **(escolha)** |
 | `DPS/infDPS/interm/end/endNac/cMun` | 1-1 | TSCodMunIBGE | pattern=[0-9]{7} | Código do município, conforme Tabela do IBGE |
@@ -105,9 +106,9 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | **`DPS/infDPS/serv/cServ`** | 1-1 | grupo | | Grupo de informações relativas ao código do serviço prestado |
 | `DPS/infDPS/serv/cServ/cTribNac` | 1-1 | TSCodTribNac | pattern=[0-9]{6} | Código de tributação nacional do ISSQN, nos termos da LC 116/2003, conforme aba MUN.INCID_INFO.SERV. do ANEXO I Regra de formação - 6 dígitos numéricos sendo: 2 para Item (LC 116/2003), 2 para Subitem (LC 116/2003) e 2 para Desdobro Nacional |
 | `DPS/infDPS/serv/cServ/cTribMun` | 0-1 | TCCodTribMun | pattern=[0-9]{3} | Código de tributação municipal do ISSQN |
-| `DPS/infDPS/serv/cServ/xDescServ` | 1-1 | TSDesc2000 | minLength=1, maxLength=2000 | Descrição completa do serviço prestado |
 | `DPS/infDPS/serv/cServ/cNBS` | 0-1 | TSCodNBS | pattern=[0-9]{9} | Código NBS correspondente ao serviço prestado, seguindo a versão 2.0, conforme Anexo B |
 | `DPS/infDPS/serv/cServ/cIntContrib` | 0-1 | TSCodigoInternoContribuinte | minLength=1, maxLength=20, pattern=[a-zA-Z0-9]{1,20} | Código interno do contribuinte |
+| `DPS/infDPS/serv/cServ/xDescServ` | 1-1 | TSDesc2000 | minLength=1, maxLength=2000, pattern=[\s\S]*[^\s][\s\S]* | Descrição completa do serviço prestado |
 | **`DPS/infDPS/serv/comExt`** | 0-1 | grupo | | Grupo de informações relativas à exportação/importação de serviço prestado |
 | `DPS/infDPS/serv/comExt/mdPrestacao` | 1-1 | TSModoPrestacao | `0` Desconhecido (tipo não informado na nota de origem)<br>`1` Transfronteiriço<br>`2` Consumo no Brasil<br>`3` Presença Comercial no Exterior<br>`4` Movimento Temporário de Pessoas Físicas<br>→ `Enums\ServiceSupplyMode` | Modo de Prestação: 0 - Desconhecido (tipo não informado na nota de origem); 1 - Transfronteiriço; 2 - Consumo no Brasil; 3 - Movimento Temporário de Pessoas Físicas; 4 - Consumo no Exterior; |
 | `DPS/infDPS/serv/comExt/vincPrest` | 1-1 | TSVincPrest | `0` Sem vínculo com o Tomador/Prestador<br>`1` Controlada<br>`2` Controladora<br>`3` Coligada<br>`4` Matriz<br>`5` Filial ou sucursal<br>`6` Outro vínculo<br>`9` Desconhecido (tipo não informado na nota de origem)<br>→ `Enums\ForeignTradeLink` | Vínculo entre as partes no negócio: 0 - Sem vínculo com o Tomador/Prestador 1 - Controlada; 2 - Controladora; 3 - Coligada; 4 - Matriz; 5 - Filial ou sucursal; 6 - Outro vínculo; 9 - Desconhecido (tipo não informado na nota de origem); |
@@ -134,7 +135,7 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | `DPS/infDPS/serv/obra/end/xCpl` | 0-1 | TSComplementoEndereco | minLength=1, maxLength=156 | Complemento do endereço |
 | `DPS/infDPS/serv/obra/end/xBairro` | 1-1 | TSBairro | minLength=1, maxLength=60 | Bairro |
 | **`DPS/infDPS/serv/atvEvento`** | 0-1 | grupo | | Grupo de informações do DPS relativas à Evento |
-| `DPS/infDPS/serv/atvEvento/xNome` | 1-1 | TSDesc255 | minLength=1, maxLength=255 | Descrição do evento Artístico, Cultural, Esportivo, etc |
+| `DPS/infDPS/serv/atvEvento/xNome` | 1-1 | TSDesc255 | minLength=1, maxLength=255, pattern=[\s\S]*[^\s][\s\S]* | Descrição do evento Artístico, Cultural, Esportivo, etc |
 | `DPS/infDPS/serv/atvEvento/dtIni` | 1-1 | TSData | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30))))) | Data de início da atividade de evento. Ano, Mês e Dia (AAAA-MM-DD) |
 | `DPS/infDPS/serv/atvEvento/dtFim` | 1-1 | TSData | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30))))) | Data de fim da atividade de evento. Ano, Mês e Dia (AAAA-MM-DD) |
 | `DPS/infDPS/serv/atvEvento/idAtvEvt` | 0-1 | TSIdeEvento | minLength=1, maxLength=30 | Identificação da Atividade de Evento (código identificador de evento determinado pela Administração Tributária Municipal) **(escolha)** |
@@ -150,63 +151,63 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | `DPS/infDPS/serv/atvEvento/end/xBairro` | 1-1 | TSBairro | minLength=1, maxLength=60 | Bairro |
 | **`DPS/infDPS/serv/infoCompl`** | 0-1 | grupo | | Grupo de informações complementares disponível para todos os serviços prestados |
 | `DPS/infDPS/serv/infoCompl/idDocTec` | 0-1 | TSDRT | minLength=1, maxLength=40 | Identificador de Documento de Responsabilidade Técnica: ART, RRT, DRT, Outros. |
-| `DPS/infDPS/serv/infoCompl/docRef` | 0-1 | TSDesc255 | minLength=1, maxLength=255 | Chave da nota, número identificador da nota, número do contrato ou outro identificador de documento emitido pelo prestador de serviços, que subsidia a emissão dessa nota pelo tomador do serviço ou intermediário (preenchimento obrigatório caso a nota esteja sendo emitida pelo Tomador ou intermediário do serviço). |
+| `DPS/infDPS/serv/infoCompl/docRef` | 0-1 | TSDesc255 | minLength=1, maxLength=255, pattern=[\s\S]*[^\s][\s\S]* | Chave da nota, número identificador da nota, número do contrato ou outro identificador de documento emitido pelo prestador de serviços, que subsidia a emissão dessa nota pelo tomador do serviço ou intermediário (preenchimento obrigatório caso a nota esteja sendo emitida pelo Tomador ou intermediário do serviço). |
 | `DPS/infDPS/serv/infoCompl/xPed` | 0-1 | TSNumeroEndereco | minLength=1, maxLength=60 | Número do pedido/ordem de compra/ordem de serviço/projeto que autorize a prestação do serviço em operações B2B - Informação de interesse do tomador do serviço para controle e gestão da Negociação |
 | **`DPS/infDPS/serv/infoCompl/gItemPed`** | 0-1 | grupo | | Grupo de itens do pedido/ordem de compra/ordem de serviço/projeto |
 | `DPS/infDPS/serv/infoCompl/gItemPed/xItemPed` | 1-99 | TSNumeroEndereco | minLength=1, maxLength=60 | Número do item do pedido/ordem de compra/ordem de serviço/projeto - Identificação do número do item do pedido ou ordem de compra destacado e xPed |
-| `DPS/infDPS/serv/infoCompl/xInfComp` | 0-1 | TSDescInfCompl | minLength=1, maxLength=2000 | Informações complementares |
+| `DPS/infDPS/serv/infoCompl/xInfComp` | 0-1 | TSDescInfCompl | minLength=1, maxLength=2000, pattern=[\s\S]*[^\s][\s\S]* | Informações complementares |
 | **`DPS/infDPS/valores`** | 1-1 | grupo | | Grupo de informações relativas à valores do serviço prestado |
 | **`DPS/infDPS/valores/vServPrest`** | 1-1 | grupo | | Grupo de informações relativas aos valores do serviço prestado |
 | `DPS/infDPS/valores/vServPrest/vReceb` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário recebido pelo intermediário do serviço (R$) |
-| `DPS/infDPS/valores/vServPrest/vServ` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor dos serviços em R$ |
+| `DPS/infDPS/valores/vServPrest/vServ` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário do serviço (R$). (Para os códigos de tributação nacional do subitem 99.03, vServ = pCopropriedade x vTotOper) |
 | **`DPS/infDPS/valores/vDescCondIncond`** | 0-1 | grupo | | Grupo de informações relativas aos descontos condicionados e incondicionados |
-| `DPS/infDPS/valores/vDescCondIncond/vDescIncond` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário do desconto incondicionado (R$) |
-| `DPS/infDPS/valores/vDescCondIncond/vDescCond` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário do desconto condicionado (R$) |
-| **`DPS/infDPS/valores/vDedRed`** | 0-1 | grupo | | Grupo de informações relativas ao valores para dedução/redução do valor da base de cálculo (valor do serviço) |
-| `DPS/infDPS/valores/vDedRed/pDR` | 0-1 | TSDec3V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,2}(\.[0-9]{2})? | Valor percentual padrão para dedução/redução do valor do serviço **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/vDR` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário padrão para dedução/redução do valor do serviço **(escolha)** |
-| **`DPS/infDPS/valores/vDedRed/documentos`** | 0-1 | grupo | | Grupo de informações de documento utilizado para Dedução/Redução do valor do serviço **(escolha)** |
-| **`DPS/infDPS/valores/vDedRed/documentos/docDedRed`** | 1-1000 | grupo | | Grupo de informações de documento utilizado para Dedução/Redução do valor do serviço |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/chNFSe` | 0-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{50} | Chave de Acesso da NFS-e (Padrão Nacional) **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/chNFe` | 0-1 | TSChaveNFe | maxLength=44, pattern=[0-9]{44} | Chave de Acesso da NF-e **(escolha)** |
-| **`DPS/infDPS/valores/vDedRed/documentos/docDedRed/NFSeMun`** | 0-1 | grupo | | Grupo de informações de Outras NFS-e (Padrão anterior de NFS-e) **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/NFSeMun/cMunNFSeMun` | 1-1 | TSCodMunIBGE | pattern=[0-9]{7} | Código Município emissor da nota eletrônica municipal (Tabela do IBGE) |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/NFSeMun/nNFSeMun` | 1-1 | TSNum15Dig | maxLength=15, pattern=[0-9]{15} | Número da nota eletrônica municipal |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/NFSeMun/cVerifNFSeMun` | 1-1 | TSCodVerificacao | minLength=1, maxLength=9, pattern=[a-zA-Z0-9]{1,9} | Código de Verificação da nota eletrônica municipal |
-| **`DPS/infDPS/valores/vDedRed/documentos/docDedRed/NFNFS`** | 0-1 | grupo | | Grupo de informações de NF ou NFS (Modelo não eletrônico) **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/NFNFS/nNFS` | 1-1 | TSNum7Dig | maxLength=7, pattern=[0-9]{7} | Número da Nota Fiscal NF ou NFS |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/NFNFS/modNFS` | 1-1 | TSNum15Dig | maxLength=15, pattern=[0-9]{15} | Modelo da Nota Fiscal NF ou NFS |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/NFNFS/serieNFS` | 1-1 | TSSerieNFNFS | minLength=1, maxLength=15, pattern=[a-zA-Z0-9]{1,15} | Série Nota Fiscal NF ou NFS |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/nDocFisc` | 0-1 | TSDesc255 | minLength=1, maxLength=255 | Número de documento fiscal **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/nDoc` | 0-1 | TSDesc255 | minLength=1, maxLength=255 | Número de documento não fiscal **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/tpDedRed` | 1-1 | TSIdeDedRed | `1` Alimentação e bebidas/frigobar<br>`2` Materiais<br>`3` Produção Externa<br>`4` Reembolso de despesas<br>`5` Repasse consorciado<br>`6` Repasse plano de saúde<br>`7` Serviços<br>`8` Subempreitada de mão de obra<br>`9` Profissional parceiro<br>`99` Outras deduções<br>→ `Enums\DeductionType` | Identificação da Dedução/Redução: 1 – Alimentação e bebidas/frigobar; 2 – Materiais; 3 - Produção Externa; 4 - Reembolso de despesas; 5 – Repasse consorciado; 6 – Repasse plano de saúde; 7 – Serviços; 8 – Subempreitada de mão de obra; 9 - Profissional parceiro; 99 – Outras deduções; |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/xDescOutDed` | 0-1 | TSDescOutDedRed | minLength=1, maxLength=150 | Descrição da Dedução/Redução quando a opção é "99 – Outras Deduções" |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/dtEmiDoc` | 1-1 | xs:date |  | Data da emissão do documento dedutível. Ano, mês e dia (AAAA-MM-DD) |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/vDedutivelRedutivel` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário total dedutível/redutível no documento informado (R$). Este é o valor total no documento informado que é passível de dedução/redução. |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/vDeducaoReducao` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário utilizado para dedução/redução do valor do serviço da NFS-e que está sendo emitida (R$). Deve ser menor ou igual ao valor deduzível/redutível (vDedutivelRedutivel). |
-| **`DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec`** | 0-1 | grupo | | Grupo de informações do Fornecedor em Deduções de Serviços |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9]{14} | Número do CNPJ **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/CPF` | 0-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | Número do CPF **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/NIF` | 0-1 | TSNIF | minLength=1, maxLength=40 | Número de Identificação Fiscal fornecido por órgão de administração tributária no exterior **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/cNaoNIF` | 0-1 | TSCodNaoNIF | `0` Não informado na nota de origem<br>`1` Dispensado do NIF<br>`2` Não exigência do NIF<br>→ `Enums\NoNifReason` | Motivo para não informação do NIF: 0 - Não informado na nota de origem; 1 - Dispensado do NIF; 2 - Não exigência do NIF; **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/CAEPF` | 0-1 | TSCAEPF | maxLength=14, pattern=[0-9]{14} | Número do Cadastro de Atividade Econômica da Pessoa Física (CAEPF) |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/IM` | 0-1 | TSInscMun | maxLength=15, minLength=1 | Número da inscrição municipal |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/xNome` | 1-1 | TSNomeRazaoSocial | minLength=1, maxLength=300 | Nome/Nome Empresarial |
-| **`DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end`** | 0-1 | grupo | | Dados de endereço |
-| **`DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/endNac`** | 0-1 | grupo | | Grupo de informações específicas de endereço nacional **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/endNac/cMun` | 1-1 | TSCodMunIBGE | pattern=[0-9]{7} | Código do município, conforme Tabela do IBGE |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/endNac/CEP` | 1-1 | TSCEP | pattern=[0-9]{8} | Número do CEP |
-| **`DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/endExt`** | 0-1 | grupo | | Grupo de informações específicas de endereço no exterior **(escolha)** |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/endExt/cPais` | 1-1 | TSCodPaisISO | pattern=[A-Z]{2} | Código do país (Tabela de Países ISO) |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/endExt/cEndPost` | 1-1 | TSCodigoEndPostal | minLength=1, maxLength=11 | Código alfanumérico do Endereçamento Postal no exterior do prestador do serviço. |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/endExt/xCidade` | 1-1 | TSCidade | minLength=1, maxLength=60 | Nome da cidade no exterior do prestador do serviço. |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/endExt/xEstProvReg` | 1-1 | TSEstadoProvRegiao | minLength=1, maxLength=60 | Estado, província ou região da cidade no exterior do prestador do serviço. |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/xLgr` | 1-1 | TSLogradouro | minLength=1, maxLength=255 | Tipo e nome do logradouro da localização do imóvel |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/nro` | 1-1 | TSNumeroEndereco | minLength=1, maxLength=60 | Número do imóvel |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/xCpl` | 0-1 | TSComplementoEndereco | minLength=1, maxLength=156 | Complemento do endereço |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/end/xBairro` | 1-1 | TSBairro | minLength=1, maxLength=60 | Bairro |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/fone` | 0-1 | TSTelefone | pattern=[0-9]{6,20} | Número do telefone do prestador: Preencher com o Código DDD + número do telefone. Nas operações com exterior é permitido informar o código do país + código da localidade + número do telefone) |
-| `DPS/infDPS/valores/vDedRed/documentos/docDedRed/fornec/email` | 0-1 | TSEmail | minLength=1, maxLength=80 | E-mail |
+| `DPS/infDPS/valores/vDescCondIncond/vDescIncond` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário do desconto incondicionado (R$). (Para os códigos de tributação nacional do subitem 99.03, vDescIncond = pCopropriedade x vDescIncondTot) |
+| `DPS/infDPS/valores/vDescCondIncond/vDescCond` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário do desconto condicionado (R$). (Para os códigos de tributação nacional do subitem 99.03, vDescCond = pCopropriedade x vDescCondTot) |
+| **`DPS/infDPS/valores/vAjusteBC`** | 0-1 | grupo | | Grupo de informações relativas ao valores para ajuste dos valores de base de cálculo |
+| `DPS/infDPS/valores/vAjusteBC/pAjusteBCISSQN` | 0-1 | TSDec3V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,2}(\.[0-9]{2})? | Valor percentual padrão para ajuste dos valores de base de cálculo do ISSQN **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/vAjusteBCISSQN` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário padrão para ajuste dos valores de base de cálculo do ISSQN **(escolha)** |
+| **`DPS/infDPS/valores/vAjusteBC/documentos`** | 0-1 | grupo | | Grupo de informações de documento utilizado para ajuste dos valores de base de cálculo (ISSQN e/ou IBS/CBS) |
+| **`DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC`** | 1-1000 | grupo | | Grupo de informações de documento utilizado para ajuste dos valores de base de cálculo (ISSQN e/ou IBS/CBS) |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/tpAjusteBC` | 1-1 | TSRTCTpAjusteBC | `2` Materiais<br>`5` Repasse consorciado<br>`6` Repasse plano de saúde<br>`7` Serviços<br>`8` Subempreitada de mão de obra<br>`9` Profissional parceiro<br>`99` Outras deduções exclusivas do ISSQN<br>`101` Repasse de remuneração por intermediação de imóveis a demais corretores envolvidos na operação<br>`102` Repasse de valores a fornecedor relativo a fornecimento intermediado por agência de turismo<br>`103` Reembolso ou ressarcimento recebido por agência de propaganda e publicidade por valores pagos relativos a serviços de produção externa por conta e ordem de terceiro<br>`104` Reembolso ou re… | Tipo de Ajuste |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/xTpAjusteBC` | 0-1 | TSDesc150 | minLength=1, maxLength=150, pattern=[\s\S]*[^\s][\s\S]* | Descrição do ajuste quando o tipo informado exige detalhamento |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/vTotDoc` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário total do documento informado (R$) |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/vAjusteAplic` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário efetivamente utilizado para ajuste de base(s) de cálculo do valor do serviço da NFS-e que está sendo emitida (R$) |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/dtEmiDoc` | 0-1 | TSData | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30))))) | Data da emissão do documento dedutível. Ano, mês e dia (AAAA-MM-DD) |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/dtCompDoc` | 0-1 | TSData | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30))))) | Data da competência do documento dedutível. Ano, mês e dia (AAAA-MM-DD) |
+| **`DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/dFeNacional`** | 0-1 | grupo | | Grupo de informações de documentos fiscais eletrônicos que se encontram no repositório nacional **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/dFeNacional/tipoChaveDFe` | 1-1 | TSRTCTipoChaveDFe | `1` NFS-e<br>`2` NF-e<br>`3` CT-e<br>`9` Outro<br>→ `Enums\ReferencedDocumentType` | Documento fiscal a que se refere a chaveDfe que seja um dos documentos do Repositório Nacional |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/dFeNacional/xTipoChaveDFe` | 0-1 | TSDesc255 | minLength=1, maxLength=255, pattern=[\s\S]*[^\s][\s\S]* | Descrição da DF-e a que se refere a chaveDfe que seja um dos documentos do Repositório Nacional Deve ser preenchido apenas quando "tipoChaveDFe = 9 (Outro)" |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/dFeNacional/chaveDFe` | 1-1 | TSRTCChaveDFe | minLength=1, maxLength=50 | Chave do Documento Fiscal eletrônico do repositório nacional referenciado para os casos de operações já tributadas |
+| **`DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/docFiscalOutro`** | 0-1 | grupo | | Grupo de informações de documento fiscais, eletrônicos ou não, que não se encontram no repositório nacional **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/docFiscalOutro/cMunDocFiscal` | 1-1 | TSNum7Dig | maxLength=7, pattern=[0-9]{7} | Código do município emissor do documento fiscal que não se encontra no repositório nacional |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/docFiscalOutro/nDocFiscal` | 1-1 | TSDesc255 | minLength=1, maxLength=255, pattern=[\s\S]*[^\s][\s\S]* | Número do documento fiscal que não se encontra no repositório nacional |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/docFiscalOutro/xDocFiscal` | 1-1 | TSDesc255 | minLength=1, maxLength=255, pattern=[\s\S]*[^\s][\s\S]* | Descrição do documento fiscal |
+| **`DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/docOutro`** | 0-1 | grupo | | Grupo de informações de documento não fiscal **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/docOutro/nDoc` | 1-1 | TSDesc255 | minLength=1, maxLength=255, pattern=[\s\S]*[^\s][\s\S]* | Número do documento não fiscal |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/docOutro/xDoc` | 1-1 | TSDesc255 | minLength=1, maxLength=255, pattern=[\s\S]*[^\s][\s\S]* | Descrição do documento não fiscal |
+| **`DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec`** | 0-1 | grupo | | Grupo de informações do fornecedor do serviço prestado |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9A-Z]{14} | Número do CNPJ **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/CPF` | 0-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | Número do CPF **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/NIF` | 0-1 | TSNIF | minLength=1, maxLength=40 | Número de Identificação Fiscal fornecido por órgão de administração tributária no exterior **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/cNaoNIF` | 0-1 | TSCodNaoNIF | `0` Não informado na nota de origem<br>`1` Dispensado do NIF<br>`2` Não exigência do NIF<br>→ `Enums\NoNifReason` | Motivo para não informação do NIF: 0 - Não informado na nota de origem; 1 - Dispensado do NIF; 2 - Não exigência do NIF; **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/CAEPF` | 0-1 | TSCAEPF | maxLength=14, pattern=[0-9]{14} | Número do Cadastro de Atividade Econômica da Pessoa Física (CAEPF) |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/IM` | 0-1 | TSInscMun | maxLength=15, minLength=1 | Número da inscrição municipal |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/xNome` | 0-1 | TSNomeRazaoSocial | minLength=1, maxLength=300 | Nome/Nome Empresarial |
+| **`DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end`** | 0-1 | grupo | | Dados de endereço |
+| **`DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/endNac`** | 0-1 | grupo | | Grupo de informações específicas de endereço nacional **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/endNac/cMun` | 1-1 | TSCodMunIBGE | pattern=[0-9]{7} | Código do município, conforme Tabela do IBGE |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/endNac/CEP` | 1-1 | TSCEP | pattern=[0-9]{8} | Número do CEP |
+| **`DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/endExt`** | 0-1 | grupo | | Grupo de informações específicas de endereço no exterior **(escolha)** |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/endExt/cPais` | 1-1 | TSCodPaisISO | pattern=[A-Z]{2} | Código do país (Tabela de Países ISO) |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/endExt/cEndPost` | 1-1 | TSCodigoEndPostal | minLength=1, maxLength=11 | Código alfanumérico do Endereçamento Postal no exterior do prestador do serviço. |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/endExt/xCidade` | 1-1 | TSCidade | minLength=1, maxLength=60 | Nome da cidade no exterior do prestador do serviço. |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/endExt/xEstProvReg` | 1-1 | TSEstadoProvRegiao | minLength=1, maxLength=60 | Estado, província ou região da cidade no exterior do prestador do serviço. |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/xLgr` | 1-1 | TSLogradouro | minLength=1, maxLength=255 | Tipo e nome do logradouro da localização do imóvel |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/nro` | 1-1 | TSNumeroEndereco | minLength=1, maxLength=60 | Número do imóvel |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/xCpl` | 0-1 | TSComplementoEndereco | minLength=1, maxLength=156 | Complemento do endereço |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/end/xBairro` | 1-1 | TSBairro | minLength=1, maxLength=60 | Bairro |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/fone` | 0-1 | TSTelefone | pattern=[0-9]{6,20} | Número do telefone do prestador: Preencher com o Código DDD + número do telefone. Nas operações com exterior é permitido informar o código do país + código da localidade + número do telefone) |
+| `DPS/infDPS/valores/vAjusteBC/documentos/docAjusteBC/fornec/email` | 0-1 | TSEmail | minLength=1, maxLength=80 | E-mail |
 | **`DPS/infDPS/valores/trib`** | 1-1 | grupo | | Grupo de informações relacionados aos tributos relacionados ao serviço prestado |
 | **`DPS/infDPS/valores/trib/tribMun`** | 1-1 | grupo | | Grupo de informações relacionados ao Imposto Sobre Serviços de Qualquer Natureza - ISSQN |
 | `DPS/infDPS/valores/trib/tribMun/tribISSQN` | 1-1 | TSTribISSQN | `1` Operação tributável<br>`2` Imunidade<br>`3` Exportação de serviço<br>`4` Não Incidência<br>→ `Enums\IssqnTaxation` | Tributação do ISSQN sobre o serviço prestado: 1 - Operação tributável; 2 - Imunidade; 3 - Exportação de serviço; 4 - Não Incidência; |
@@ -245,20 +246,19 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | `DPS/infDPS/valores/trib/totTrib/indTotTrib` | 0-1 | TSTipoIndTotTrib | `0` Não<br>→ `Enums\TotalTaxIndicator` | Indicador de informação de valor total de tributos. Possui valor fixo igual a zero (indTotTrib=0). Não informar nenhum valor estimado para os Tributos (Decreto 8.264/2014). 0 - Não; **(escolha)** |
 | `DPS/infDPS/valores/trib/totTrib/pTotTribSN` | 0-1 | TSDec2V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,1}(\.[0-9]{2})? | Valor percentual aproximado do total dos tributos da alíquota do Simples Nacional (%) **(escolha)** |
 | **`DPS/infDPS/IBSCBS`** | 0-1 | grupo | | Grupo de informações declaradas pelo emitente referentes ao IBS e à CBS |
-| `DPS/infDPS/IBSCBS/finNFSe` | 1-1 | TSRTCFinNFSe | `0` NFS-e regular<br>→ `Enums\NfsePurpose` | Indicador da finalidade da emissão de NFS-e |
 | `DPS/infDPS/IBSCBS/indFinal` | 0-1 | TSRTCIndFinal | `0` Não<br>`1` Sim<br>→ `Enums\FinalConsumer` | Indica operação de uso ou consumo pessoal (art. 57) |
-| `DPS/infDPS/IBSCBS/cIndOp` | 1-1 | TSRTCCodIndOp | pattern=[0-9]{6} | Código indicador da operação de fornecimento, conforme tabela "código indicador de operação" |
+| `DPS/infDPS/IBSCBS/cIndOp` | 0-1 | TSRTCCodIndOp | pattern=[0-9]{6} | Código indicador da operação de fornecimento, conforme tabela "código indicador de operação" |
 | `DPS/infDPS/IBSCBS/tpOper` | 0-1 | TSRTCTpOper | `1` Fornecimento com pagamento posterior<br>`2` Recebimento do pagamento com fornecimento já realizado<br>`3` Fornecimento com pagamento já realizado<br>`4` Recebimento do pagamento com fornecimento posterior<br>`5` Fornecimento e recebimento do pagamento concomitantes<br>→ `Enums\GovernmentOperationType` | Tipo de Operação com Entes Governamentais ou outros serviços sobre bens imóveis |
 | **`DPS/infDPS/IBSCBS/gRefNFSe`** | 0-1 | grupo | | Grupo de NFS-e referenciadas |
-| `DPS/infDPS/IBSCBS/gRefNFSe/refNFSe` | 1-99 | TSChaveNFSe | maxLength=50, pattern=[0-9]{50} | Chave da NFS-e referenciada |
+| `DPS/infDPS/IBSCBS/gRefNFSe/refNFSe` | 1-99 | TSChaveNFSe | maxLength=50, pattern=[0-9]{6}([0-9A-Z]{14})[0-9]{30} | Chave da NFS-e referenciada |
 | `DPS/infDPS/IBSCBS/tpEnteGov` | 0-1 | TSRTCTpEnteGov | `1` União<br>`2` Estado<br>`3` Distrito Federal<br>`4` Município<br>→ `Enums\GovernmentEntity` | Tipo de ente governamental |
 | `DPS/infDPS/IBSCBS/indDest` | 1-1 | TSRTCIndDest | `0` o destinatário é o próprio tomador/adquirente identificado na NFS-e (tomador = adquirente = destinatário)<br>`1` o destinatário não é o próprio adquirente, podendo ser outra pessoa, física ou jurídica (ou equiparada), ou um estabelecimento diferente do indicado como tomador (tomador = adquirente ≠ destinatário)<br>→ `Enums\RecipientIndicator` | A respeito do Destinatário dos serviços |
 | **`DPS/infDPS/IBSCBS/dest`** | 0-1 | grupo | | Grupo de informações relativas ao Destinatário |
-| `DPS/infDPS/IBSCBS/dest/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9]{14} | Número da inscrição no Cadastro Nacional de Pessoa Jurídica (CNPJ) do Destinatário do serviço **(escolha)** |
+| `DPS/infDPS/IBSCBS/dest/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9A-Z]{14} | Número da inscrição no Cadastro Nacional de Pessoa Jurídica (CNPJ) do Destinatário do serviço **(escolha)** |
 | `DPS/infDPS/IBSCBS/dest/CPF` | 0-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | Número da inscrição no Cadastro de Pessoa Física (CPF) do Destinatário do serviço **(escolha)** |
 | `DPS/infDPS/IBSCBS/dest/NIF` | 0-1 | TSNIF | minLength=1, maxLength=40 | Número de Identificação Fiscal fornecido por órgão de administração tributária no exterior **(escolha)** |
 | `DPS/infDPS/IBSCBS/dest/cNaoNIF` | 0-1 | TSCodNaoNIF | `0` Não informado na nota de origem<br>`1` Dispensado do NIF<br>`2` Não exigência do NIF<br>→ `Enums\NoNifReason` | Motivo para não informação do NIF: 0 - Não informado na nota de origem; 1 - Dispensado do NIF; 2 - Não exigência do NIF; **(escolha)** |
-| `DPS/infDPS/IBSCBS/dest/xNome` | 1-1 | TSDesc150 | minLength=1, maxLength=150 | Nome / Nome Empresarial do do Destinatário do serviço |
+| `DPS/infDPS/IBSCBS/dest/xNome` | 1-1 | TSDesc150 | minLength=1, maxLength=150, pattern=[\s\S]*[^\s][\s\S]* | Nome / Nome Empresarial do do Destinatário do serviço |
 | **`DPS/infDPS/IBSCBS/dest/end`** | 0-1 | grupo | | Grupo de informações do endereço do Destinatário do serviço |
 | **`DPS/infDPS/IBSCBS/dest/end/endNac`** | 0-1 | grupo | | Grupo de informações específicas de endereço nacional **(escolha)** |
 | `DPS/infDPS/IBSCBS/dest/end/endNac/cMun` | 1-1 | TSCodMunIBGE | pattern=[0-9]{7} | Código do município, conforme Tabela do IBGE |
@@ -275,47 +275,35 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | `DPS/infDPS/IBSCBS/dest/fone` | 0-1 | TSTelefone | pattern=[0-9]{6,20} | Número do telefone do Destinatário do serviço (Preencher com o Código DDD + número do telefone. Nas operações com exterior é permitido informar o código do país + código da localidade + número do telefone) |
 | `DPS/infDPS/IBSCBS/dest/email` | 0-1 | TSEmail | minLength=1, maxLength=80 | E-mail do Destinatário do serviço |
 | **`DPS/infDPS/IBSCBS/imovel`** | 0-1 | grupo | | Grupo de informações de operações relacionadas a bens imóveis, exceto obras |
-| `DPS/infDPS/IBSCBS/imovel/inscImobFisc` | 0-1 | TSInscImobFisc | minLength=1, maxLength=30 | Inscrição imobiliária fiscal (código fornecido pela Prefeitura Municipal para a identificação da obra ou para fins de recolhimento do IPTU) |
-| `DPS/infDPS/IBSCBS/imovel/cCIB` | 0-1 | TSCodCIB | length=8 | Código do Cadastro Imobiliário Brasileiro - CIB **(escolha)** |
-| **`DPS/infDPS/IBSCBS/imovel/end`** | 0-1 | grupo | | Grupo de informações do endereço da obra do serviço prestado **(escolha)** |
-| `DPS/infDPS/IBSCBS/imovel/end/CEP` | 0-1 | TSCEP | pattern=[0-9]{8} | Número do CEP **(escolha)** |
-| **`DPS/infDPS/IBSCBS/imovel/end/endExt`** | 0-1 | grupo | | Grupo de informações específicas de endereço no exterior **(escolha)** |
-| `DPS/infDPS/IBSCBS/imovel/end/endExt/cEndPost` | 1-1 | TSCodigoEndPostal | minLength=1, maxLength=11 | Código alfanumérico do Endereçamento Postal no exterior do prestador do serviço. |
-| `DPS/infDPS/IBSCBS/imovel/end/endExt/xCidade` | 1-1 | TSCidade | minLength=1, maxLength=60 | Nome da cidade no exterior do prestador do serviço. |
-| `DPS/infDPS/IBSCBS/imovel/end/endExt/xEstProvReg` | 1-1 | TSEstadoProvRegiao | minLength=1, maxLength=60 | Estado, província ou região da cidade no exterior do prestador do serviço. |
-| `DPS/infDPS/IBSCBS/imovel/end/xLgr` | 1-1 | TSLogradouro | minLength=1, maxLength=255 | Tipo e nome do logradouro da localização do imóvel |
-| `DPS/infDPS/IBSCBS/imovel/end/nro` | 1-1 | TSNumeroEndereco | minLength=1, maxLength=60 | Número do imóvel |
-| `DPS/infDPS/IBSCBS/imovel/end/xCpl` | 0-1 | TSComplementoEndereco | minLength=1, maxLength=156 | Complemento do endereço |
-| `DPS/infDPS/IBSCBS/imovel/end/xBairro` | 1-1 | TSBairro | minLength=1, maxLength=60 | Bairro |
+| `DPS/infDPS/IBSCBS/imovel/cMun` | 1-1 | TSCodMunIBGE | pattern=[0-9]{7} | Código do município do endereço do imóvel (Tabela do IBGE) |
+| **`DPS/infDPS/IBSCBS/imovel/gLocacao`** | 0-1 | grupo | | Grupo de informações relativas às operações de locação, cessão onerosa ou arrendamento de bens imóveis |
+| `DPS/infDPS/IBSCBS/imovel/gLocacao/pCopropriedade` | 1-1 | TSDec3V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,2}(\.[0-9]{2})? | Percentual de Copropriedade (Caso só haja um locador, cedente ou arrendador, informar o Percentual de Copropriedade de 100%) |
+| `DPS/infDPS/IBSCBS/imovel/gLocacao/vTotOper` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor total da operação com bem imóvel (Informar o valor total da operação de locação, cessão onerosa ou arrendamento de bens imóveis, associado ao aluguel, renda ou equivalente, conforme art. 255 da LC 214/2025). Não deverá ser inserido neste campo o valor proporcional do coproprietário. |
+| `DPS/infDPS/IBSCBS/imovel/gLocacao/vDescIncondTot` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor total do Desconto Incondicionado (Informar o valor total do desconto incondicionado na operação de locação, cessão onerosa ou arrendamento de bens imóveis) |
+| `DPS/infDPS/IBSCBS/imovel/gLocacao/vDescCondTot` | 0-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor total do Desconto Condicionado (Informar o valor total do desconto incondicionado na operação de locação, cessão onerosa ou arrendamento de bens imóveis) |
+| `DPS/infDPS/IBSCBS/imovel/gLocacao/dVencOrig` | 0-1 | TSData | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30))))) | Data de vencimento original Ano, Mês e Dia (AAAA-MM-DD) (Informar data de vencimento original do aluguel, renda ou equivalente na operação de locação, cessão onerosa ou arrendamento de bens imóveis) |
+| **`DPS/infDPS/IBSCBS/imovel/gUnidImob`** | 0-99 | grupo | | Grupo de informações relativas às unidades imobiliárias objeto da operação |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/inscImobFisc` | 0-1 | TSInscImobFisc | minLength=1, maxLength=30 | Inscrição imobiliária fiscal (código fornecido pela Prefeitura Municipal para a identificação da obra ou para fins de recolhimento do IPTU) |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/cCIB` | 0-1 | TSCodCIB | length=8 | Código do Cadastro Imobiliário Brasileiro - CIB **(escolha)** |
+| **`DPS/infDPS/IBSCBS/imovel/gUnidImob/end`** | 0-1 | grupo | | Grupo de informações do endereço do imóvel. **(escolha)** |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/end/CEP` | 1-1 | TSCEP | pattern=[0-9]{8} | Código numérico do Endereçamento Postal nacional (CEP) do endereço do imóvel. |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/end/xLgr` | 1-1 | TSLogradouro | minLength=1, maxLength=255 | Tipo e nome do logradouro do endereço do imóvel. |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/end/nro` | 1-1 | TSNumeroEndereco | minLength=1, maxLength=60 | Número no logradouro do endereço do imóvel. |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/end/xCpl` | 0-1 | TSComplementoEndereco | minLength=1, maxLength=156 | Complemento do endereço do imóvel. |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/end/xBairro` | 0-1 | TSBairro | minLength=1, maxLength=60 | Bairro do endereço do imóvel. |
+| **`DPS/infDPS/IBSCBS/imovel/gUnidImob/gAjusteBCLocImoveis`** | 0-1000 | grupo | | Grupo de informações relativas a valores de ajuste (dedução/redução) da Base de Cálculo do IBS e da CBS referentes às operações de locação, cessão onerosa ou arrendamento de bens imóveis |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/gAjusteBCLocImoveis/tpAjusteBCLocImoveis` | 1-1 | TSAjusteBCLocImoveis | `01` Tributos inclusos no aluguel ou equivalente (Ex.: IPTU, Contribuição de melhoria) - apenas para NBS 1.1002.10.00 ou 1.1002.20.00<br>`02` Emolumento incluso no aluguel ou equivalente - apenas para NBS 1.1002.10.00 ou 1.1002.20.00<br>`03` Condomínio incluso no aluguel ou equivalente - apenas para NBS 1.1002.10.00 ou 1.1002.20.00<br>`04` Redutor Social - apenas para a NBS 1.1002.10.00<br>`99` Outras parcelas inclusas no aluguel ou equivalente | Tipo de parcela não integrante da base de cálculo do IBS e da CBS; 01 = Tributos inclusos no aluguel ou equivalente (Ex.: IPTU, Contribuição de melhoria) - apenas para NBS 1.1002.10.00 ou 1.1002.20.00; 02 = Emolumento incluso no aluguel ou equivalente - apenas para NBS 1.1002.10.00 ou 1.1002.20.00; 03 = Condomínio incluso no aluguel ou equivalente - apenas para NBS 1.1002.10.00 ou 1.1002.20.00; 04 = Redutor Social - apenas para a NBS 1.1002.10.00; 99 = Outras parcelas inclusas no aluguel ou equivalente; |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/gAjusteBCLocImoveis/xTpAjusteBCLocImoveis` | 0-1 | TSDesc150 | minLength=1, maxLength=150, pattern=[\s\S]*[^\s][\s\S]* | Descrição do tipo de parcela não integrante da base de cálculo do IBS e da CBS quando a opção for "99 = Outras parcelas inclusas no aluguel ou equivalente". |
+| `DPS/infDPS/IBSCBS/imovel/gUnidImob/gAjusteBCLocImoveis/vAjusteBCLocImoveis` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário utilizado para não inclusão na base de cálculo do IBS e da CBS da NFS-e que está sendo emitida (R$). (Informar o valor total da parcela não integrante da base de cálculo - IPTU, Condomínio, Redutor social, etc. -, não devendo ser inserido o valor proporcional do coproprietário) |
+| **`DPS/infDPS/IBSCBS/bensMoveis`** | 0-1000 | grupo | | Grupo de informações relativas aos bens móveis objetos de locação |
+| `DPS/infDPS/IBSCBS/bensMoveis/cNCMBemMovel` | 1-1 | TSNCM | maxLength=8, pattern=[0-9]{8} | Código da Nomenclatura Comum do Mercosul (NCM) do bem móvel objeto da locação. |
+| `DPS/infDPS/IBSCBS/bensMoveis/xNCMBemMovel` | 1-1 | TSDesc150 | minLength=1, maxLength=150, pattern=[\s\S]*[^\s][\s\S]* | Descrição do Bem Móvel objeto da locação. |
+| `DPS/infDPS/IBSCBS/bensMoveis/qtdNCMBemMovel` | 1-1 | TSNum3Dig | maxLength=3, pattern=[0-9]{1}[0-9]{0,2} | Quantidade do Bem Móvel objeto da locação. |
 | **`DPS/infDPS/IBSCBS/valores`** | 1-1 | grupo | | Grupo de informações relativas aos valores do serviço prestado para IBS e CBS |
-| **`DPS/infDPS/IBSCBS/valores/gReeRepRes`** | 0-1 | grupo | | Grupo de informações relativas a valores incluídos neste documento e recebidos por motivo de estarem relacionadas a operações de terceiros, objeto de reembolso, repasse ou ressarcimento pelo recebedor, já tributados e aqui referenciados |
-| **`DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos`** | 1-1000 | grupo | | Grupo relativo aos documentos referenciados nos casos de reembolso, repasse e ressarcimento que serão considerados na base de cálculo do ISSQN, do IBS e da CBS |
-| **`DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/dFeNacional`** | 0-1 | grupo | | Grupo de informações de documentos fiscais eletrônicos que se encontram no repositório nacional **(escolha)** |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/dFeNacional/tipoChaveDFe` | 1-1 | TSRTCTipoChaveDFe | `1` NFS-e<br>`2` NF-e<br>`3` CT-e<br>`9` Outro<br>→ `Enums\ReferencedDocumentType` | Documento fiscal a que se refere a chaveDfe que seja um dos documentos do Repositório Nacional |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/dFeNacional/xTipoChaveDFe` | 0-1 | TSDesc255 | minLength=1, maxLength=255 | Descrição da DF-e a que se refere a chaveDfe que seja um dos documentos do Repositório Nacional Deve ser preenchido apenas quando "tipoChaveDFe = 9 (Outro)" |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/dFeNacional/chaveDFe` | 1-1 | TSRTCChaveDFe | minLength=1, maxLength=50 | Chave do Documento Fiscal eletrônico do repositório nacional referenciado para os casos de operações já tributadas |
-| **`DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/docFiscalOutro`** | 0-1 | grupo | | Grupo de informações de documento fiscais, eletrônicos ou não, que não se encontram no repositório nacional **(escolha)** |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/docFiscalOutro/cMunDocFiscal` | 1-1 | TSNum7Dig | maxLength=7, pattern=[0-9]{7} | Código do município emissor do documento fiscal que não se encontra no repositório nacional |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/docFiscalOutro/nDocFiscal` | 1-1 | TSDesc255 | minLength=1, maxLength=255 | Número do documento fiscal que não se encontra no repositório nacional |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/docFiscalOutro/xDocFiscal` | 1-1 | TSDesc255 | minLength=1, maxLength=255 | Descrição do documento fiscal |
-| **`DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/docOutro`** | 0-1 | grupo | | Grupo de informações de documento não fiscal. **(escolha)** |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/docOutro/nDoc` | 1-1 | TSDesc255 | minLength=1, maxLength=255 | Número do documento não fiscal |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/docOutro/xDoc` | 1-1 | TSDesc255 | minLength=1, maxLength=255 | Descrição do documento não fiscal |
-| **`DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/fornec`** | 0-1 | grupo | | Grupo de informações do fornecedor do documento referenciado |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/fornec/CNPJ` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9]{14} | Número da inscrição no Cadastro Nacional de Pessoa Jurídica (CNPJ) do Fornecedor do serviço **(escolha)** |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/fornec/CPF` | 0-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | Número da inscrição no Cadastro de Pessoa Física (CPF) do Fornecedor do serviço **(escolha)** |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/fornec/NIF` | 0-1 | TSNIF | minLength=1, maxLength=40 | Este elemento só deverá ser preenchido para fornecedores não residentes no Brasil **(escolha)** |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/fornec/cNaoNIF` | 0-1 | TSCodNaoNIF | `0` Não informado na nota de origem<br>`1` Dispensado do NIF<br>`2` Não exigência do NIF<br>→ `Enums\NoNifReason` | Motivo para não informação do NIF: 0 - Não informado na nota de origem; 1 - Dispensado do NIF; 2 - Não exigência do NIF; **(escolha)** |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/fornec/xNome` | 1-1 | TSDesc150 | minLength=1, maxLength=150 | Nome / Razão Social do do Fornecedor do serviço |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/dtEmiDoc` | 1-1 | TSData | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30))))) | Data da emissão do documento dedutível Ano, mês e dia (AAAA-MM-DD) |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/dtCompDoc` | 1-1 | TSData | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30))))) | Data da competência do documento dedutível Ano, mês e dia (AAAA-MM-DD) |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/tpReeRepRes` | 1-1 | TSRTCTpReeRepRes | `01` Repasse de remuneração por intermediação de imóveis a demais corretores envolvidos na operação<br>`02` Repasse de valores a fornecedor relativo a fornecimento intermediado por agência de turismo<br>`03` Reembolso ou ressarcimento recebido por agência de propaganda e publicidade por valores pagos relativos<br>`04` Reembolso ou ressarcimento recebido por agência de propaganda e publicidade por valores pagos relativos<br>`99` Outros reembolsos ou ressarcimentos recebidos por valores pagos relativos a operações por conta e ordem de terceiro<br>→ `Enums\ReimbursementType` | Tipo de valor incluído neste documento, recebido por motivo de estarem relacionadas a operações de terceiros, objeto de reembolso, repasse ou ressarcimento pelo recebedor, já tributados e aqui referenciados |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/xTpReeRepRes` | 0-1 | TSDesc150 | minLength=1, maxLength=150 | Descrição do reembolso ou ressarcimento quando a opção é "99 – Outros reembolsos ou ressarcimentos recebidos por valores pagos relativos a operações por conta e ordem de terceiro" |
-| `DPS/infDPS/IBSCBS/valores/gReeRepRes/documentos/vlrReeRepRes` | 1-1 | TSDec15V2 | pattern=0\|0\.[0-9]{2}\|[1-9]{1}[0-9]{0,14}(\.[0-9]{2})? | Valor monetário (total ou parcial, conforme documento informado) utilizado para não inclusão na base de cálculo do ISS e do IBS e da CBS da NFS-e que está sendo emitida (R$) |
-| **`DPS/infDPS/IBSCBS/valores/trib`** | 1-1 | grupo | | Grupo de informações relacionados aos tributos IBS e CBS |
-| **`DPS/infDPS/IBSCBS/valores/trib/gIBSCBS`** | 1-1 | grupo | | Grupo de informações relacionadas ao IBS e à CBS |
-| `DPS/infDPS/IBSCBS/valores/trib/gIBSCBS/CST` | 1-1 | TSRTCCodSitTrib | pattern=[0-9]{3} | Código de Situação Tributária do IBS e da CBS |
-| `DPS/infDPS/IBSCBS/valores/trib/gIBSCBS/cClassTrib` | 1-1 | TSRTCCodClassTrib | pattern=[0-9]{6} | Código de Classificação Tributária do IBS e da CBS |
+| **`DPS/infDPS/IBSCBS/valores/trib`** | 1-1 | grupo | | Grupo de informações de tributação do IBS e da CBS |
+| `DPS/infDPS/IBSCBS/valores/trib/CST` | 1-1 | TSRTCCodSitTrib | pattern=[0-9]{3} | Código de Situação Tributária do IBS e da CBS |
+| `DPS/infDPS/IBSCBS/valores/trib/cClassTrib` | 1-1 | TSRTCCodClassTrib | pattern=[0-9]{6} | Código de Classificação Tributária do IBS e da CBS |
+| **`DPS/infDPS/IBSCBS/valores/trib/gIBSCBS`** | 0-1 | grupo | | Grupo de informações relacionadas ao IBS e à CBS |
 | `DPS/infDPS/IBSCBS/valores/trib/gIBSCBS/cCredPres` | 0-1 | TSRTCCodCredPres | pattern=[0-9]{2} | Código e Classificação do Crédito Presumido: IBS e CBS |
 | **`DPS/infDPS/IBSCBS/valores/trib/gIBSCBS/gTribRegular`** | 0-1 | grupo | | Grupo de informações da Tributação Regular |
 | `DPS/infDPS/IBSCBS/valores/trib/gIBSCBS/gTribRegular/CSTReg` | 1-1 | TSRTCCodSitTrib | pattern=[0-9]{3} | Código de Situação Tributária do IBS e da CBS de tributação regular |
@@ -332,13 +320,13 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 |---|---|---|---|---|
 | `pedRegEvento/@versao` | 1-1 | TVerNFSe | maxLength=4, pattern=1\.00\|1\.01 |  |
 | **`pedRegEvento/infPedReg`** | 1-1 | grupo | |  |
-| `pedRegEvento/infPedReg/@Id` | 1-1 | TSIdPedRegEvt | maxLength=59, pattern=PRE[0-9]{56} |  |
+| `pedRegEvento/infPedReg/@Id` | 1-1 | TSIdPedRegEvt | maxLength=59, pattern=PRE[0-9]{8}(1[0-9]{14}\|2[0-9A-Z]{14})[0-9]{33} |  |
 | `pedRegEvento/infPedReg/tpAmb` | 1-1 | TSTipoAmbiente | `1` Produção<br>`2` Homologação<br>→ `Enums\Environment` | Tipo de ambiente: 1 - Produção; 2 - Homologação; |
 | `pedRegEvento/infPedReg/verAplic` | 1-1 | TSVerAplic | minLength=1, maxLength=20 | Versão do aplicativo que gerou o pedido de registro de evento |
-| `pedRegEvento/infPedReg/dhEvento` | 1-1 | TSDateTimeUTC | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[1,3-9])\|(1[0-2]))-(29\|30)))))T(20\|21\|22\|23\|[0-1]\d):[0-5]\d:[0-5]\d([\-,\+](0[0-9]\|10\|11):00\|([\+](12):00)) | Data e hora do evento no formato AAAA-MM-DDThh:mm:ssTZD (UTC - Universal Coordinated Time, onde TZD pode ser -02:00 (Fernando de Noronha), -03:00 (Brasília) ou -04:00 (Manaus), no horário de verão serão -01:00, -02:00 e -03:00. Ex.: 2010-08-19T13:00:15-03:00. |
-| `pedRegEvento/infPedReg/CNPJAutor` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9]{14} | Número de inscrição federal (CNPJ) do autor do evento. CNPJ do autor do evento (parte interessada ou pessoa que figure na NFS-e. O autor do evento não é o procurador) **(escolha)** |
+| `pedRegEvento/infPedReg/dhEvento` | 1-1 | TSDateTimeUTC | pattern=(((20(([02468][048])\|([13579][26]))-02-29))\|(20[0-9][0-9])-((((0[1-9])\|(1[0-2]))-((0[1-9])\|(1\d)\|(2[0-8])))\|((((0[13578])\|(1[02]))-31)\|(((0[13-9])\|(1[0-2]))-(29\|30)))))T(20\|21\|22\|23\|[0-1]\d):[0-5]\d:[0-5]\d([-+](0[0-9]\|10\|11):00\|([\+](12):00)) | Data e hora do evento no formato AAAA-MM-DDThh:mm:ssTZD (UTC - Universal Coordinated Time, onde TZD pode ser -02:00 (Fernando de Noronha), -03:00 (Brasília) ou -04:00 (Manaus), no horário de verão serão -01:00, -02:00 e -03:00. Ex.: 2010-08-19T13:00:15-03:00. |
+| `pedRegEvento/infPedReg/CNPJAutor` | 0-1 | TSCNPJ | maxLength=14, pattern=[0-9A-Z]{14} | Número de inscrição federal (CNPJ) do autor do evento. CNPJ do autor do evento (parte interessada ou pessoa que figure na NFS-e. O autor do evento não é o procurador) **(escolha)** |
 | `pedRegEvento/infPedReg/CPFAutor` | 0-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | Número de inscrição federal (CPF) do autor do evento. CPF do autor do evento (parte interessada ou pessoa que figure na NFS-e como prestador, tomador, intermediário. O autor do evento poderá ser o procurador) **(escolha)** |
-| `pedRegEvento/infPedReg/chNFSe` | 1-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{50} | Identificador da NFS-e à qual o evento será vinculado |
+| `pedRegEvento/infPedReg/chNFSe` | 1-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{6}([0-9A-Z]{14})[0-9]{30} | Identificador da NFS-e à qual o evento será vinculado |
 | **`pedRegEvento/infPedReg/e101101`** | 0-1 | grupo | | Evento de cancelamento **(escolha)** |
 | `pedRegEvento/infPedReg/e101101/xDesc` | 1-1 | TE101101_xDesc | `Cancelamento de NFS-e` | Descrição do Evento: Descrição do evento: "Cancelamento de NFS-e". |
 | `pedRegEvento/infPedReg/e101101/cMotivo` | 1-1 | TSCodJustCanc | `1` Erro na Emissão<br>`2` Serviço não Prestado<br>`9` Outros<br>→ `Enums\CancellationReason` | Código de justificativa de cancelamento: 1 - Erro na Emissão; 2 - Serviço não Prestado; 9 - Outros; |
@@ -347,7 +335,7 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | `pedRegEvento/infPedReg/e105102/xDesc` | 1-1 | TE105102_xDesc | `Cancelamento de NFS-e por Substituição` | Descrição do Evento: Descrição do evento: "Cancelamento de NFS-e por Substituição". |
 | `pedRegEvento/infPedReg/e105102/cMotivo` | 1-1 | TSCodJustSubst | `01` Desenquadramento de NFS-e do Simples Nacional<br>`02` Enquadramento de NFS-e no Simples Nacional<br>`03` Inclusão Retroativa de Imunidade/Isenção para NFS-e<br>`04` Exclusão Retroativa de Imunidade/Isenção para NFS-e<br>`05` Rejeição de NFS-e pelo tomador ou pelo intermediário se responsável pelo recolhimento do tributo<br>`99` Outros<br>→ `Enums\ReplacementReason` | Código de justificativa de cancelamento substituição: 01 - Desenquadramento de NFS-e do Simples Nacional; 02 - Enquadramento de NFS-e no Simples Nacional; 03 - Inclusão Retroativa de Imunidade/Isenção para NFS-e; 04 - Exclusão Retroativa de Imunidade/Isenção para NFS-e; 05 - Rejeição de NFS-e pelo tomador ou pelo intermediário se responsável pelo recolhimento do tributo; 99 - Outros; Obtido do campo da DPS "DPS/infDPS/subst/cMotivo" |
 | `pedRegEvento/infPedReg/e105102/xMotivo` | 0-1 | TSMotivo | minLength=15, maxLength=255 | Descrição para explicitar o motivo indicado neste evento. Obtido do campo da DPS "DPS/infDPS/subst/xMotivo". |
-| `pedRegEvento/infPedReg/e105102/chSubstituta` | 1-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{50} | Chave de Acesso da NFS-e substituta |
+| `pedRegEvento/infPedReg/e105102/chSubstituta` | 1-1 | TSChaveNFSe | maxLength=50, pattern=[0-9]{6}([0-9A-Z]{14})[0-9]{30} | Chave de Acesso da NFS-e substituta |
 | **`pedRegEvento/infPedReg/e101103`** | 0-1 | grupo | | Solicitação de Análise Fiscal para Cancelamento de NFS-e **(escolha)** |
 | `pedRegEvento/infPedReg/e101103/xDesc` | 1-1 | TE101103_xDesc | `Solicitação de Análise Fiscal para Cancelamento de NFS-e` | Descrição do evento: "Solicitação de Análise Fiscal para Cancelamento de NFS-e" |
 | `pedRegEvento/infPedReg/e101103/cMotivo` | 1-1 | TSCodJustAnaliseFiscalCanc | `1` Erro na Emissão<br>`2` Serviço não Prestado<br>`9`<br>→ `Enums\AnalysisCancellationReason` | Código do motivo da solicitação de análise fiscal para cancelamento de NFS-e: 1 - Erro na Emissão; 2 - Serviço não Prestado; 9 - Outros; |
@@ -387,7 +375,7 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | **`pedRegEvento/infPedReg/e205208`** | 0-1 | grupo | | Anulação da Rejeição **(escolha)** |
 | `pedRegEvento/infPedReg/e205208/xDesc` | 1-1 | TE205208_xDesc | `Manifestação de NFS-e - Anulação da Rejeição` | Descrição do evento: "Manifestação de NFS-e - Anulação da Rejeição". |
 | `pedRegEvento/infPedReg/e205208/CPFAgTrib` | 1-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | CPF do agente da administração tributária municipal que efetuou o anulação da manifestação de rejeição da NFS-e |
-| `pedRegEvento/infPedReg/e205208/idEvManifRej` | 1-1 | TSIdNumEvento | pattern=[0-9]{59} | Referência ao "id" do Evento de Manifestação de NFS-e - Rejeição, que originou o presente evento de anulação |
+| `pedRegEvento/infPedReg/e205208/idEvManifRej` | 1-1 | TSIdNumEvento | pattern=[0-9]{8}(1[0-9]{14}\|2[0-9A-Z]{14})[0-9]{33} | Referência ao "id" do Evento de Manifestação de NFS-e - Rejeição, que originou o presente evento de anulação |
 | `pedRegEvento/infPedReg/e205208/xMotivo` | 1-1 | TSMotivo | minLength=15, maxLength=255 | Descrição para explicitar o motivo indicado neste evento |
 | **`pedRegEvento/infPedReg/e305101`** | 0-1 | grupo | | Cancelamento de NFS-e por Ofício **(escolha)** |
 | `pedRegEvento/infPedReg/e305101/xDesc` | 1-1 | TE305101_xDesc | `Cancelamento de NFS-e por Ofício` | Descrição do evento: "Cancelamento de NFS-e por Ofício" |
@@ -402,6 +390,6 @@ Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. G
 | **`pedRegEvento/infPedReg/e305103`** | 0-1 | grupo | | Desbloqueio de NFS-e por Ofício **(escolha)** |
 | `pedRegEvento/infPedReg/e305103/xDesc` | 1-1 | TE305103_xDesc | `Desbloqueio de NFS-e por Ofício` | Descrição do evento: "Desbloqueio de NFS-e por Ofício". |
 | `pedRegEvento/infPedReg/e305103/CPFAgTrib` | 1-1 | TSCPF | maxLength=11, pattern=[0-9]{11} | CPF do agente da administração tributária municipal que efetuou o desbloqueio de NFS-e por ofício |
-| `pedRegEvento/infPedReg/e305103/idBloqOfic` | 1-1 | TSIdNumEvento | pattern=[0-9]{59} | Referência ao "id" do "Bloqueio de ofício" que originou o presente evento de desbloqueio |
+| `pedRegEvento/infPedReg/e305103/idBloqOfic` | 1-1 | TSIdNumEvento | pattern=[0-9]{8}(1[0-9]{14}\|2[0-9A-Z]{14})[0-9]{33} | Referência ao "id" do "Bloqueio de ofício" que originou o presente evento de desbloqueio |
 | `pedRegEvento/Signature` | 0-1 | XMLDSig | gerada pelo pacote | Assinatura digital |
 

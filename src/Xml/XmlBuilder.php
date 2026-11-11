@@ -4,6 +4,7 @@ namespace ChristianoErick\NfseNacional\Xml;
 
 use BackedEnum;
 use ChristianoErick\NfseNacional\Exceptions\InvalidDataException;
+use ChristianoErick\NfseNacional\Support\Layout;
 use DateTimeInterface;
 use DOMDocument;
 use DOMElement;
@@ -22,9 +23,16 @@ use Stringable;
  */
 final class XmlBuilder
 {
+    private readonly Layout $layout;
+
+    public function __construct(?Layout $layout = null)
+    {
+        $this->layout = $layout ?? Layout::current();
+    }
+
     public function build(string $root, array $data): DOMDocument
     {
-        $type = SchemaMap::rootType($root) ?? throw new InvalidDataException("Elemento raiz desconhecido: {$root}");
+        $type = SchemaMap::rootType($root, $this->layout) ?? throw new InvalidDataException("Elemento raiz desconhecido: {$root}");
 
         $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->preserveWhiteSpace = false;
@@ -44,7 +52,7 @@ final class XmlBuilder
 
     private function fill(DOMDocument $dom, DOMElement $element, string $type, array $data, string $path): void
     {
-        $definition = SchemaMap::type($type) ?? throw new InvalidDataException("Tipo desconhecido no leiaute: {$type}");
+        $definition = SchemaMap::type($type, $this->layout) ?? throw new InvalidDataException("Tipo desconhecido no leiaute {$this->layout->value}: {$type}");
 
         $known = [];
 
@@ -96,7 +104,8 @@ final class XmlBuilder
 
         if ($unknown !== []) {
             throw new InvalidDataException(sprintf(
-                'Campo(s) fora do leiaute em %s: %s. Aceitos: %s.',
+                'Campo(s) fora do leiaute %s em %s: %s. Aceitos: %s.',
+                $this->layout->value,
                 $path,
                 implode(', ', $unknown),
                 implode(', ', array_keys($known)),

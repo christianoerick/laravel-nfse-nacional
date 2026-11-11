@@ -3,6 +3,7 @@
 namespace ChristianoErick\NfseNacional\Xml;
 
 use ChristianoErick\NfseNacional\Exceptions\SchemaValidationException;
+use ChristianoErick\NfseNacional\Support\Layout;
 use DOMDocument;
 
 /**
@@ -10,6 +11,13 @@ use DOMDocument;
  */
 final class SchemaValidator
 {
+    private readonly Layout $layout;
+
+    public function __construct(?Layout $layout = null)
+    {
+        $this->layout = $layout ?? Layout::current();
+    }
+
     private const SCHEMAS = [
         'DPS' => 'DPS_v1.01.xsd',
         'NFSe' => 'NFSe_v1.01.xsd',
@@ -49,7 +57,7 @@ final class SchemaValidator
 
         $previous = libxml_use_internal_errors(true);
         libxml_clear_errors();
-        $copy->schemaValidate(SchemaMap::schemaPath($schema));
+        $copy->schemaValidate(SchemaMap::schemaPath($schema, $this->layout));
 
         $errors = array_map(fn (\LibXMLError $error) => [
             'line' => $error->line,

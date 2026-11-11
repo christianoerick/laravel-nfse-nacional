@@ -11,6 +11,7 @@ use ChristianoErick\NfseNacional\Exceptions\ConnectionException;
 use ChristianoErick\NfseNacional\Exceptions\NotFoundException;
 use ChristianoErick\NfseNacional\Exceptions\RejectedException;
 use ChristianoErick\NfseNacional\Nfse\NfseDocument;
+use ChristianoErick\NfseNacional\Support\Layout;
 use ChristianoErick\NfseNacional\Support\ProcessingMessage;
 use ChristianoErick\NfseNacional\Xml\SchemaValidator;
 use ChristianoErick\NfseNacional\Xml\XmlBuilder;
@@ -33,6 +34,8 @@ class NfseClient
 {
     private ?TemporaryCredentials $credentials = null;
 
+    private readonly Layout $layout;
+
     /**
      * @param  array<string, mixed>  $config  config('nfse-nacional')
      */
@@ -41,7 +44,15 @@ class NfseClient
         private readonly Environment $environment,
         private readonly array $config,
         private readonly HttpFactory $http,
-    ) {}
+    ) {
+        $this->layout = Layout::resolve($config['layout'] ?? 'auto', $environment, null, $config['layout_switch'] ?? null);
+    }
+
+    /** Leiaute usado pela DPS e pelos eventos deste cliente (ambiente + data). */
+    public function layout(): Layout
+    {
+        return $this->layout;
+    }
 
     public function environment(): Environment
     {
@@ -96,10 +107,10 @@ class NfseClient
     /** XML da DPS pronto para envio (completo, validado e assinado). */
     public function signDps(Dps $dps): string
     {
-        $dom = (new XmlBuilder)->build('DPS', $this->prepare($dps)->toArray());
+        $dom = (new XmlBuilder($this->layout))->build('DPS', $this->prepare($dps)->toArray($this->layout));
 
         if ($this->config['validate_schema'] ?? true) {
-            (new SchemaValidator)->validate($dom);
+            (new SchemaValidator($this->layout))->validate($dom);
         }
 
         // Com a declaração XML (encoding UTF-8): sem ela o Sefin recusa (E1229).
@@ -164,7 +175,7 @@ class NfseClient
         $data = (array) $response->json();
 
         return new EventResult(
-            eventXml: isset($data['eventoXmlGZipB64']) ? (string) gzdecode((string) base64_decode($data['eventoXmlGZipB64'])) : '',
+            eventXml: isset($data['eventoXmlGZipB64']) ? self::unpack((string) $data['eventoXmlGZipB64']) : '',
             signedRequestXml: $signed,
             response: array_diff_key($data, ['eventoXmlGZipB64' => true]),
         );
@@ -172,10 +183,10 @@ class NfseClient
 
     public function signEvent(EventRequest $event): string
     {
-        $dom = (new XmlBuilder)->build('pedRegEvento', $event->toArray($this->environment, $this->applicationVersion(), $this->certificate->document()));
+        $dom = (new XmlBuilder($this->layout))->build('pedRegEvento', $event->toArray($this->environment, $this->applicationVersion(), $this->certificate->document()));
 
         if ($this->config['validate_schema'] ?? true) {
-            (new SchemaValidator)->validate($dom);
+            (new SchemaValidator($this->layout))->validate($dom);
         }
 
         return self::withDeclaration($this->signer()->sign($dom, 'infPedReg', $this->certificate));
@@ -193,13 +204,24 @@ class NfseClient
      */
     public function event(string $accessKey, string $type, int $sequence = 1): ?EventResult
     {
+        // O código vai sem o "e" (101103); com ele o Sefin responde 404.
         $response = $this->send('get', $this->sefin('nfse/'.$accessKey.'/eventos/'.ltrim($type, 'e').'/'.$sequence), allowNotFound: true);
 
-        if ($response->status() === 404 || ! $response->json('eventoXmlGZipB64')) {
+        if ($response->status() === 404) {
             return null;
         }
 
-        return new EventResult((string) gzdecode((string) base64_decode($response->json('eventoXmlGZipB64'))), response: (array) $response->json());
+        $data = (array) $response->json();
+        // Resposta real: lista "eventos" com arquivoXml (o Swagger fala em eventoXmlGZipB64).
+        $items = $data['eventos'] ?? null;
+        $item = is_array($items) ? (array_is_list($items) ? ($items[0] ?? null) : $items) : null;
+        $payload = $item['arquivoXml'] ?? $item['ArquivoXml'] ?? $data['eventoXmlGZipB64'] ?? null;
+
+        if (! $payload) {
+            return null;
+        }
+
+        return new EventResult(self::unpack((string) $payload), response: array_diff_key($data, ['eventos' => true]) + ['evento' => array_diff_key((array) $item, ['arquivoXml' => true, 'ArquivoXml' => true])]);
     }
 
     /**
@@ -216,7 +238,7 @@ class NfseClient
         }
 
         return array_map(fn (array $item) => $item + [
-            'xml' => isset($item['ArquivoXml']) ? (string) gzdecode((string) base64_decode($item['ArquivoXml'])) : null,
+            'xml' => isset($item['ArquivoXml']) ? self::unpack((string) $item['ArquivoXml']) : (isset($item['arquivoXml']) ? self::unpack((string) $item['arquivoXml']) : null),
         ], (array) ($response->json('LoteDFe') ?? []));
     }
 
@@ -250,7 +272,7 @@ class NfseClient
 
         $data = (array) $response->json();
         $data['LoteDFe'] = array_map(fn (array $item) => $item + [
-            'xml' => isset($item['ArquivoXml']) ? (string) gzdecode((string) base64_decode($item['ArquivoXml'])) : null,
+            'xml' => isset($item['ArquivoXml']) ? self::unpack((string) $item['ArquivoXml']) : null,
         ], (array) ($data['LoteDFe'] ?? []));
 
         return $data;
@@ -336,6 +358,31 @@ class NfseClient
         $dom->encoding = 'UTF-8';
 
         return '<?xml version="1.0" encoding="UTF-8"?>'.$dom->saveXML($dom->documentElement);
+    }
+
+    /**
+     * XML de um campo da API: gzip em base64 (às vezes em base64 de novo,
+     * como o arquivoXml da consulta de eventos) ou XML puro.
+     */
+    public static function unpack(string $payload): string
+    {
+        $value = trim($payload);
+
+        for ($i = 0; $i < 3; $i++) {
+            if (str_starts_with($value, '<')) {
+                return $value;
+            }
+
+            $decoded = base64_decode($value, true);
+
+            if ($decoded === false) {
+                break;
+            }
+
+            $value = str_starts_with($decoded, "\x1f\x8b") ? (string) gzdecode($decoded) : trim($decoded);
+        }
+
+        return str_starts_with($value, '<') ? $value : '';
     }
 
     public static function pack(string $xml): string

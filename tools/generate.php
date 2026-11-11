@@ -1,13 +1,15 @@
 <?php
 
 /**
- * Lê os XSD oficiais (resources/schemas) e gera:
+ * Lê os XSD oficiais de cada leiaute (resources/schemas/{leiaute}) e gera:
  *
- *  - resources/schema-map.php: para cada tipo complexo, os filhos na ordem
- *    exigida pelo XSD (o XmlBuilder ordena o array do usuário por ele);
- *  - src/Enums/*.php: enums com rótulo para as listas fechadas do leiaute;
- *  - docs/CAMPOS.md: todos os campos da DPS e do pedido de evento, com
- *    ocorrência, tipo, opções e a descrição oficial.
+ *  - resources/schema-map/{leiaute}.php: para cada tipo complexo, os filhos
+ *    na ordem exigida pelo XSD (o XmlBuilder ordena o array do usuário por ele);
+ *  - src/Enums/*.php: enums com rótulo para as listas fechadas (do leiaute
+ *    mais novo; o que saiu dele vem do anterior);
+ *  - docs/CAMPOS.md (leiaute mais novo) e docs/CAMPOS-{leiaute}.md: todos os
+ *    campos da DPS e do pedido de evento, com ocorrência, tipo, opções e a
+ *    descrição oficial.
  *
  * Uso: php tools/generate.php (rodar de novo a cada XSD novo).
  */
@@ -69,54 +71,69 @@ const OVERRIDES = [
 ];
 
 $root = dirname(__DIR__);
-$schemaDir = $root.'/resources/schemas';
 
-$complex = [];
-$simple = [];
-$elements = [];
-
-foreach (glob($schemaDir.'/*.xsd') as $file) {
-    if (str_contains($file, 'xmldsig')) {
-        continue;
-    }
-
-    $dom = new DOMDocument;
-    $dom->load($file);
-    $xp = new DOMXPath($dom);
-    $xp->registerNamespace('xs', XS);
-
-    foreach ($xp->query('/xs:schema/xs:complexType') as $node) {
-        $complex[$node->getAttribute('name')] = parseComplex($xp, $node, $node->getAttribute('name'), $complex);
-    }
-
-    foreach ($xp->query('/xs:schema/xs:simpleType') as $node) {
-        $simple[$node->getAttribute('name')] = parseSimple($xp, $node);
-    }
-
-    foreach ($xp->query('/xs:schema/xs:element') as $node) {
-        $elements[$node->getAttribute('name')] = $node->getAttribute('type');
-    }
-}
-
-ksort($complex);
-ksort($simple);
-
-// ---------------------------------------------------------------- schema map
-$map = [
-    'roots' => $elements,
-    'types' => array_map(fn (array $type) => [
-        'attributes' => array_keys($type['attributes']),
-        // [nome, tipo complexo|null, é lista, formato do valor simples|null]
-        'children' => array_map(fn (array $child) => [
-            $child['name'],
-            isset($complex[$child['type']]) ? $child['type'] : null,
-            $child['max'] !== '1',
-            isset($complex[$child['type']]) ? null : valueFormat($child['type'], $simple),
-        ], $type['children']),
-    ], $complex),
+/** Leiautes, do mais antigo para o mais novo (o último manda nos enums). */
+$layouts = [
+    'v1.01' => 'leiaute 1.01 (esquemas oficiais de 09/02/2026; produção até 30/11/2026)',
+    'nt009' => 'NT SE/CGNFS-e 009 v1.01 (esquemas oficiais de 20/10/2026; produção restrita desde 20/10/2026 e produção a partir de 01/12/2026)',
 ];
 
-file_put_contents($root.'/resources/schema-map.php', "<?php\n\n// Gerado por tools/generate.php a partir dos XSD oficiais. Não editar à mão.\n\nreturn ".exportArray($map).";\n");
+$parsed = [];
+
+foreach ($layouts as $layout => $layoutTitle) {
+    $complex = [];
+    $simple = [];
+    $elements = [];
+
+    foreach (glob($root."/resources/schemas/{$layout}/*.xsd") as $file) {
+        if (str_contains($file, 'xmldsig')) {
+            continue;
+        }
+
+        $dom = new DOMDocument;
+        $dom->load($file);
+        $xp = new DOMXPath($dom);
+        $xp->registerNamespace('xs', XS);
+
+        foreach ($xp->query('/xs:schema/xs:complexType') as $node) {
+            $complex[$node->getAttribute('name')] = parseComplex($xp, $node, $node->getAttribute('name'), $complex);
+        }
+
+        foreach ($xp->query('/xs:schema/xs:simpleType') as $node) {
+            $simple[$node->getAttribute('name')] = parseSimple($xp, $node);
+        }
+
+        foreach ($xp->query('/xs:schema/xs:element') as $node) {
+            $elements[$node->getAttribute('name')] = $node->getAttribute('type');
+        }
+    }
+
+    ksort($complex);
+    ksort($simple);
+
+    $map = [
+        'roots' => $elements,
+        'types' => array_map(fn (array $type) => [
+            'attributes' => array_keys($type['attributes']),
+            // [nome, tipo complexo|null, é lista, formato do valor simples|null]
+            'children' => array_map(fn (array $child) => [
+                $child['name'],
+                isset($complex[$child['type']]) ? $child['type'] : null,
+                $child['max'] !== '1',
+                isset($complex[$child['type']]) ? null : valueFormat($child['type'], $simple),
+            ], $type['children']),
+        ], $complex),
+    ];
+
+    @mkdir($root.'/resources/schema-map', 0777, true);
+    file_put_contents($root."/resources/schema-map/{$layout}.php", "<?php\n\n// Gerado por tools/generate.php a partir dos XSD oficiais ({$layoutTitle}). Não editar à mão.\n\nreturn ".exportArray($map).";\n");
+
+    $parsed[$layout] = ['complex' => $complex, 'simple' => $simple, 'elements' => $elements, 'title' => $layoutTitle];
+    echo "{$layout}: ".count($complex).' tipos complexos, '.count($simple)." simples.\n";
+}
+
+// Tipos simples para os enums: o leiaute mais novo prevalece.
+$simple = array_merge(...array_column($parsed, 'simple'));
 
 // ---------------------------------------------------------------- enums
 $enums = [
@@ -140,7 +157,8 @@ $enums = [
     'MdicSubmission' => ['TSEnvMDIC', 'Compartilhar com o MDIC (comExt/mdic).'],
     'VehicleCategory' => ['TSCategVeic', 'Categoria do veículo (pedágio).'],
     'TollWheelType' => ['TSRodagem', 'Tipo de rodagem (pedágio).'],
-    'DeductionType' => ['TSIdeDedRed', 'Tipo de documento de dedução/redução (docDedRed/tpDedRed).'],
+    'DeductionType' => ['TSIdeDedRed', 'Tipo de documento de dedução/redução (leiaute 1.01: docDedRed/tpDedRed).'],
+    'BaseAdjustmentType' => ['TSRTCTpAjusteBC', 'Tipo de ajuste da base de cálculo (NT 009: vAjusteBC/docAjusteBC/tpAjusteBC).'],
     'IssqnSuspension' => ['TSOpExigSuspensa', 'Tipo de suspensão da exigibilidade do ISSQN (exigSusp/tpSusp).'],
     'SimplesNacionalOption' => ['TSOpSimpNac', 'Situação perante o Simples Nacional (opSimpNac).'],
     'SimplesNacionalRegime' => ['TSRegimeApuracaoSimpNac', 'Regime de apuração dos tributos pelo Simples Nacional (regApTribSN).'],
@@ -154,7 +172,7 @@ $enums = [
     'MunicipalBenefitType' => ['TBMISSQN', 'Tipo do benefício municipal (BM/tpBM).'],
     'NfseStatus' => ['TStat', 'Situação da NFS-e (cStat).'],
     'EventCode' => ['TSCodigoEventoNFSe', 'Código do evento.'],
-    'NfsePurpose' => ['TSRTCFinNFSe', 'Finalidade da NFS-e (IBSCBS/finNFSe).'],
+    'NfsePurpose' => ['TSRTCFinNFSe', 'Finalidade da NFS-e (finNFSe; no leiaute 1.01 fica em IBSCBS, na NT 009 no infDPS).'],
     'FinalConsumer' => ['TSRTCIndFinal', 'Operação com consumidor final (IBSCBS/indFinal).'],
     'GovernmentOperationType' => ['TSRTCTpOper', 'Tipo de operação com ente governamental (IBSCBS/tpOper).'],
     'GovernmentEntity' => ['TSRTCTpEnteGov', 'Tipo de ente governamental (IBSCBS/tpEnteGov).'],
@@ -222,20 +240,24 @@ PHP;
 }
 
 // ---------------------------------------------------------------- docs
-$md = "# Mapa completo de campos\n\nGerado por `tools/generate.php` a partir dos XSD oficiais (leiaute 1.01). Use os nomes das tags como chaves do array; a ordem não importa, o `XmlBuilder` segue a do XSD.\n\n";
-$md .= "Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. Grupos marcados com **(escolha)** aceitam só um dos filhos.\n\n";
+@mkdir($root.'/docs', 0777, true);
+$newest = array_key_last($parsed);
 
-foreach (['DPS' => 'DPS (emissão)', 'pedRegEvento' => 'Pedido de registro de evento (cancelamento, substituição etc.)'] as $rootName => $title) {
-    $md .= "## {$title}\n\n";
-    $md .= "| Caminho | Ocor. | Tipo | Opções / formato | Descrição |\n|---|---|---|---|---|\n";
-    $md .= walk($rootName, $elements[$rootName], $complex, $simple, $generatedEnums, 0, []);
-    $md .= "\n";
+foreach ($parsed as $layout => $info) {
+    $md = "# Mapa completo de campos — {$info['title']}\n\nGerado por `tools/generate.php` a partir dos XSD oficiais. Use os nomes das tags como chaves do array; a ordem não importa, o `XmlBuilder` segue a do XSD do leiaute em uso.\n\n";
+    $md .= "Legenda da ocorrência: `1-1` obrigatório, `0-1` opcional, `0-n`/`1-n` lista. Grupos marcados com **(escolha)** aceitam só um dos filhos.\n\n";
+
+    foreach (['DPS' => 'DPS (emissão)', 'pedRegEvento' => 'Pedido de registro de evento (cancelamento, substituição etc.)'] as $rootName => $title) {
+        $md .= "## {$title}\n\n";
+        $md .= "| Caminho | Ocor. | Tipo | Opções / formato | Descrição |\n|---|---|---|---|---|\n";
+        $md .= walk($rootName, $info['elements'][$rootName], $info['complex'], $info['simple'], $generatedEnums, 0, []);
+        $md .= "\n";
+    }
+
+    file_put_contents($root.'/docs/'.($layout === $newest ? 'CAMPOS.md' : "CAMPOS-{$layout}.md"), $md);
 }
 
-@mkdir($root.'/docs', 0777, true);
-file_put_contents($root.'/docs/CAMPOS.md', $md);
-
-echo count($complex).' tipos complexos, '.count($simple).' simples, '.count($generatedEnums)." enums.\n";
+echo count($generatedEnums)." enums.\n";
 
 // ======================================================================
 

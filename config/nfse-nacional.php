@@ -15,6 +15,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Leiaute da DPS
+    |--------------------------------------------------------------------------
+    |
+    | "auto" (padrão): escolhe pelo ambiente e pela data em layout_switch.
+    | "v1.01": esquemas de 09/02/2026 (produção até 30/11/2026).
+    | "nt009": NT SE/CGNFS-e 009 v1.01 (esquemas de 20/10/2026).
+    |
+    */
+    'layout' => env('NFSE_NACIONAL_LAYOUT', 'auto'),
+
+    // A partir de que dia cada ambiente usa a NT 009 (AAAA-MM-DD).
+    'layout_switch' => [
+        'production' => env('NFSE_NACIONAL_NT009_PRODUCTION', '2026-12-01'),
+        'restricted' => env('NFSE_NACIONAL_NT009_RESTRICTED', '2026-10-20'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Endereços oficiais
     |--------------------------------------------------------------------------
     |

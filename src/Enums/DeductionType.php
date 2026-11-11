@@ -5,7 +5,7 @@ namespace ChristianoErick\NfseNacional\Enums;
 use ChristianoErick\NfseNacional\Enums\Concerns\HasOptions;
 
 /**
- * Tipo de documento de dedução/redução (docDedRed/tpDedRed).
+ * Tipo de documento de dedução/redução (leiaute 1.01: docDedRed/tpDedRed).
  *
  * Gerado por tools/generate.php a partir de TSIdeDedRed (XSD oficial).
  */

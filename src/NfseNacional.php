@@ -8,6 +8,7 @@ use ChristianoErick\NfseNacional\Danfse\DanfseRenderer;
 use ChristianoErick\NfseNacional\Enums\Environment;
 use ChristianoErick\NfseNacional\Http\NfseClient;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Closure;
 use SensitiveParameter;
 
 /**
@@ -19,31 +20,33 @@ use SensitiveParameter;
 class NfseNacional
 {
     /**
-     * @param  array<string, mixed>  $config
+     * @param  array<string, mixed>|Closure(): array<string, mixed>  $config  array fixo ou leitura a cada uso (config('nfse-nacional'))
      */
     public function __construct(
-        private readonly array $config,
+        private readonly array|Closure $config,
         private readonly HttpFactory $http,
     ) {}
 
     public function client(Certificate $certificate, Environment|string|int|null $environment = null): NfseClient
     {
+        $config = $this->config();
+
         return new NfseClient(
             $certificate,
-            Environment::resolve($environment ?? ($this->config['environment'] ?? 'production')),
-            $this->config,
+            Environment::resolve($environment ?? ($config['environment'] ?? 'production')),
+            $config,
             $this->http,
         );
     }
 
     public function certificate(#[SensitiveParameter] string $pfx, #[SensitiveParameter] string $password): Certificate
     {
-        return Certificate::fromPfx($pfx, $password, $this->config['openssl_binary'] ?? null);
+        return Certificate::fromPfx($pfx, $password, $this->config()['openssl_binary'] ?? null);
     }
 
     public function certificateFromPath(string $path, #[SensitiveParameter] string $password): Certificate
     {
-        return Certificate::fromPath($path, $password, $this->config['openssl_binary'] ?? null);
+        return Certificate::fromPath($path, $password, $this->config()['openssl_binary'] ?? null);
     }
 
     public function danfse(): DanfseRenderer
@@ -59,6 +62,6 @@ class NfseNacional
     /** @return array<string, mixed> */
     public function config(): array
     {
-        return $this->config;
+        return $this->config instanceof Closure ? ($this->config)() : $this->config;
     }
 }
