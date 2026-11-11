@@ -13,6 +13,8 @@ use ChristianoErick\NfseNacional\Enums\SimplesNacionalRegime;
 use ChristianoErick\NfseNacional\Nfse\NfseDocument;
 use ChristianoErick\NfseNacional\Support\Document;
 use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\Common\EccLevel;
+use chillerlan\QRCode\Output\QRMarkupSVG;
 use chillerlan\QRCode\QROptions;
 use Closure;
 use Dompdf\Dompdf;
@@ -237,12 +239,12 @@ class DanfseRenderer
 
     private function qrCode(string $url): string
     {
-        $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_MARKUP_SVG,
-            'outputBase64' => true,
-            'eccLevel' => QRCode::ECC_M,
-            'addQuietzone' => false,
-        ]);
+        // Compatível com chillerlan/php-qrcode 5 e 6.
+        $options = new QROptions;
+        $options->outputInterface = QRMarkupSVG::class;
+        $options->outputBase64 = true;
+        $options->eccLevel = EccLevel::M;
+        $options->addQuietzone = false;
 
         return (new QRCode($options))->render($url);
     }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 - 2026-11-11
+
+- Aceita chillerlan/php-qrcode 5 e 6.
+
 ## 0.1.0 - 2026-11-11
 
 Primeira versão.
