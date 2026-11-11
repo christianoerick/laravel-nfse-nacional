@@ -60,6 +60,10 @@ class ClientTest extends TestCase
             $dps = gzdecode(base64_decode($request['dpsXmlGZipB64']));
             (new SchemaValidator)->validate($dps);
 
+            // Sem a declaração UTF-8 o Sefin recusa com E1229.
+            $this->assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?><DPS ', $dps);
+            $this->assertTrue(XmlSigner::verify($dps));
+
             return $request->method() === 'POST'
                 && str_contains($dps, '<tpAmb>2</tpAmb>')
                 && str_contains($dps, '<verAplic>LaravelNfseNacional1</verAplic>');
@@ -128,6 +132,7 @@ class ClientTest extends TestCase
         $result = $this->client()->cancel(self::KEY, CancellationReason::IssueError, 'Valor informado errado na emissão.');
 
         $this->assertSame('<evento/>', $result->eventXml);
+        $this->assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?><pedRegEvento ', $result->signedRequestXml);
         (new SchemaValidator)->validate($result->signedRequestXml);
         $this->assertTrue(XmlSigner::verify($result->signedRequestXml));
         $this->assertStringContainsString('<CNPJAutor>'.self::PROVIDER_CNPJ.'</CNPJAutor>', $result->signedRequestXml);

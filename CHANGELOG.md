@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3 - 2026-11-11
+
+- DPS e pedido de evento vão com a declaração `<?xml version="1.0" encoding="UTF-8"?>`: sem ela o Sefin recusa com E1229. Validado em produção (NFS-e emitida em Maceió).
+
 ## 0.1.2 - 2026-11-11
 
 - Logo do DANFSe com fundo branco (antes saía preto, com o texto ilegível).

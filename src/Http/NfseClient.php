@@ -102,7 +102,8 @@ class NfseClient
             (new SchemaValidator)->validate($dom);
         }
 
-        return (string) $this->signer()->sign($dom, 'infDPS', $this->certificate)->saveXML($dom->documentElement);
+        // Com a declaração XML (encoding UTF-8): sem ela o Sefin recusa (E1229).
+        return self::withDeclaration($this->signer()->sign($dom, 'infDPS', $this->certificate));
     }
 
     /** DPS com ambiente, versão do aplicativo e data de emissão preenchidos. */
@@ -177,7 +178,7 @@ class NfseClient
             (new SchemaValidator)->validate($dom);
         }
 
-        return (string) $this->signer()->sign($dom, 'infPedReg', $this->certificate)->saveXML($dom->documentElement);
+        return self::withDeclaration($this->signer()->sign($dom, 'infPedReg', $this->certificate));
     }
 
     /** Cancela a NFS-e (e101101). Motivo: 1 erro na emissão, 2 serviço não prestado, 9 outros. */
@@ -327,6 +328,14 @@ class NfseClient
     private function adn(string $path): string
     {
         return rtrim((string) $this->config['urls'][$this->environment->key()]['adn'], '/').'/'.$path;
+    }
+
+    /** XML completo com a declaração UTF-8 (exigida pelo Sefin: E1229). */
+    public static function withDeclaration(\DOMDocument $dom): string
+    {
+        $dom->encoding = 'UTF-8';
+
+        return '<?xml version="1.0" encoding="UTF-8"?>'.$dom->saveXML($dom->documentElement);
     }
 
     public static function pack(string $xml): string
