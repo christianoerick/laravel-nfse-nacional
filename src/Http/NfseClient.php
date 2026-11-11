@@ -1,0 +1,419 @@
+<?php
+
+namespace ChristianoErick\NfseNacional\Http;
+
+use ChristianoErick\NfseNacional\Certificate\Certificate;
+use ChristianoErick\NfseNacional\Dps\Dps;
+use ChristianoErick\NfseNacional\Enums\CancellationReason;
+use ChristianoErick\NfseNacional\Enums\Environment;
+use ChristianoErick\NfseNacional\Events\EventRequest;
+use ChristianoErick\NfseNacional\Exceptions\ConnectionException;
+use ChristianoErick\NfseNacional\Exceptions\NotFoundException;
+use ChristianoErick\NfseNacional\Exceptions\RejectedException;
+use ChristianoErick\NfseNacional\Nfse\NfseDocument;
+use ChristianoErick\NfseNacional\Support\ProcessingMessage;
+use ChristianoErick\NfseNacional\Xml\SchemaValidator;
+use ChristianoErick\NfseNacional\Xml\XmlBuilder;
+use ChristianoErick\NfseNacional\Xml\XmlSigner;
+use Illuminate\Http\Client\ConnectionException as HttpConnectionException;
+use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
+
+/**
+ * Cliente do Sistema Nacional NFS-e para um certificado (mTLS) e um
+ * ambiente. Sefin Nacional: emissão, consulta, DPS e eventos. ADN: DANFSe,
+ * parâmetros municipais e distribuição.
+ *
+ * Erros: RejectedException (regra de negócio, não reenviar igual),
+ * ConnectionException (técnico, dá para repetir — antes consulte a DPS),
+ * NotFoundException (consulta sem resultado).
+ */
+class NfseClient
+{
+    private ?TemporaryCredentials $credentials = null;
+
+    /**
+     * @param  array<string, mixed>  $config  config('nfse-nacional')
+     */
+    public function __construct(
+        private readonly Certificate $certificate,
+        private readonly Environment $environment,
+        private readonly array $config,
+        private readonly HttpFactory $http,
+    ) {}
+
+    public function environment(): Environment
+    {
+        return $this->environment;
+    }
+
+    public function certificate(): Certificate
+    {
+        return $this->certificate;
+    }
+
+    // ================================================================ DPS / NFS-e
+
+    /**
+     * Completa, valida no XSD, assina e envia a DPS. Devolve a NFS-e gerada.
+     */
+    public function emit(Dps $dps): EmissionResult
+    {
+        $signed = $this->signDps($dps);
+
+        $response = $this->send('post', $this->sefin('nfse'), ['dpsXmlGZipB64' => self::pack($signed)]);
+        $data = (array) $response->json();
+
+        if (empty($data['nfseXmlGZipB64'])) {
+            throw new RejectedException(ProcessingMessage::listFrom($data['erros'] ?? $data['erro'] ?? []) ?: [new ProcessingMessage(null, 'Resposta sem o XML da NFS-e.')], $response->status(), $data);
+        }
+
+        return new EmissionResult(
+            nfse: NfseDocument::fromGzipBase64($data['nfseXmlGZipB64']),
+            signedDpsXml: $signed,
+            alerts: ProcessingMessage::listFrom($data['alertas'] ?? []),
+            response: array_diff_key($data, ['nfseXmlGZipB64' => true]),
+        );
+    }
+
+    /**
+     * Emite com segurança contra resposta perdida: se a DPS (mesmo Id) já
+     * virou nota, devolve a existente em vez de reenviar.
+     */
+    public function emitOrRecover(Dps $dps): EmissionResult
+    {
+        $dps = $this->prepare($dps);
+        $existing = $this->findByDps($dps->id());
+
+        if ($existing !== null) {
+            return new EmissionResult($existing, signedDpsXml: '', recovered: true);
+        }
+
+        return $this->emit($dps);
+    }
+
+    /** XML da DPS pronto para envio (completo, validado e assinado). */
+    public function signDps(Dps $dps): string
+    {
+        $dom = (new XmlBuilder)->build('DPS', $this->prepare($dps)->toArray());
+
+        if ($this->config['validate_schema'] ?? true) {
+            (new SchemaValidator)->validate($dom);
+        }
+
+        return (string) $this->signer()->sign($dom, 'infDPS', $this->certificate)->saveXML($dom->documentElement);
+    }
+
+    /** DPS com ambiente, versão do aplicativo e data de emissão preenchidos. */
+    public function prepare(Dps $dps): Dps
+    {
+        return $dps->withDefaults($this->environment, $this->applicationVersion());
+    }
+
+    /** HEAD /dps/{id}: já existe NFS-e para esta DPS? (qualquer certificado válido) */
+    public function dpsExists(string $dpsId): bool
+    {
+        $response = $this->send('head', $this->sefin('dps/'.$dpsId), allowNotFound: true);
+
+        return $response->successful();
+    }
+
+    /** GET /dps/{id}: chave de acesso da NFS-e gerada pela DPS, ou null. */
+    public function accessKeyForDps(string $dpsId): ?string
+    {
+        $response = $this->send('get', $this->sefin('dps/'.$dpsId), allowNotFound: true);
+
+        return $response->status() === 404 ? null : ($response->json('chaveAcesso') ?: null);
+    }
+
+    /** NFS-e gerada pela DPS, ou null. */
+    public function findByDps(string $dpsId): ?NfseDocument
+    {
+        $accessKey = $this->accessKeyForDps($dpsId);
+
+        return $accessKey ? $this->find($accessKey) : null;
+    }
+
+    /** GET /nfse/{chave}. */
+    public function get(string $accessKey): NfseDocument
+    {
+        return $this->find($accessKey) ?? throw new NotFoundException("NFS-e {$accessKey} não encontrada.");
+    }
+
+    public function find(string $accessKey): ?NfseDocument
+    {
+        $response = $this->send('get', $this->sefin('nfse/'.$accessKey), allowNotFound: true);
+
+        if ($response->status() === 404 || ! $response->json('nfseXmlGZipB64')) {
+            return null;
+        }
+
+        return NfseDocument::fromGzipBase64($response->json('nfseXmlGZipB64'));
+    }
+
+    // ================================================================ eventos
+
+    /** Assina e registra um evento (POST /nfse/{chave}/eventos). */
+    public function registerEvent(EventRequest $event): EventResult
+    {
+        $signed = $this->signEvent($event);
+
+        $response = $this->send('post', $this->sefin('nfse/'.$event->accessKey.'/eventos'), ['pedidoRegistroEventoXmlGZipB64' => self::pack($signed)]);
+        $data = (array) $response->json();
+
+        return new EventResult(
+            eventXml: isset($data['eventoXmlGZipB64']) ? (string) gzdecode((string) base64_decode($data['eventoXmlGZipB64'])) : '',
+            signedRequestXml: $signed,
+            response: array_diff_key($data, ['eventoXmlGZipB64' => true]),
+        );
+    }
+
+    public function signEvent(EventRequest $event): string
+    {
+        $dom = (new XmlBuilder)->build('pedRegEvento', $event->toArray($this->environment, $this->applicationVersion(), $this->certificate->document()));
+
+        if ($this->config['validate_schema'] ?? true) {
+            (new SchemaValidator)->validate($dom);
+        }
+
+        return (string) $this->signer()->sign($dom, 'infPedReg', $this->certificate)->saveXML($dom->documentElement);
+    }
+
+    /** Cancela a NFS-e (e101101). Motivo: 1 erro na emissão, 2 serviço não prestado, 9 outros. */
+    public function cancel(string $accessKey, CancellationReason|string|int $reason, string $description): EventResult
+    {
+        return $this->registerEvent(EventRequest::cancellation($accessKey, $reason, $description));
+    }
+
+    /**
+     * Evento pelo tipo e sequência (GET /nfse/{chave}/eventos/{tipo}/{seq}).
+     * Tipo com ou sem o "e": 101101 ou e101101.
+     */
+    public function event(string $accessKey, string $type, int $sequence = 1): ?EventResult
+    {
+        $response = $this->send('get', $this->sefin('nfse/'.$accessKey.'/eventos/'.ltrim($type, 'e').'/'.$sequence), allowNotFound: true);
+
+        if ($response->status() === 404 || ! $response->json('eventoXmlGZipB64')) {
+            return null;
+        }
+
+        return new EventResult((string) gzdecode((string) base64_decode($response->json('eventoXmlGZipB64'))), response: (array) $response->json());
+    }
+
+    /**
+     * Todos os eventos da nota pelo ADN (contribuintes/NFSe/{chave}/Eventos).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function events(string $accessKey): array
+    {
+        $response = $this->send('get', $this->adn('contribuintes/NFSe/'.$accessKey.'/Eventos'), allowNotFound: true);
+
+        if ($response->status() === 404) {
+            return [];
+        }
+
+        return array_map(fn (array $item) => $item + [
+            'xml' => isset($item['ArquivoXml']) ? (string) gzdecode((string) base64_decode($item['ArquivoXml'])) : null,
+        ], (array) ($response->json('LoteDFe') ?? []));
+    }
+
+    // ================================================================ ADN
+
+    /** PDF oficial do DANFSe (ADN /danfse/{chave}). */
+    public function danfse(string $accessKey): string
+    {
+        $response = $this->send('get', $this->adn('danfse/'.$accessKey), allowNotFound: true, accept: 'application/pdf');
+
+        if ($response->status() === 404) {
+            throw new NotFoundException("DANFSe da NFS-e {$accessKey} não encontrado.");
+        }
+
+        return $response->body();
+    }
+
+    /**
+     * Documentos fiscais a partir de um NSU (ADN contribuintes/DFe/{NSU}),
+     * até 100 por chamada.
+     *
+     * @return array<string, mixed>
+     */
+    public function distribution(int $nsu, bool $lote = true): array
+    {
+        $response = $this->send('get', $this->adn('contribuintes/DFe/'.$nsu).($lote ? '?lote=true' : ''), allowNotFound: true);
+
+        if ($response->status() === 404) {
+            return ['LoteDFe' => []];
+        }
+
+        $data = (array) $response->json();
+        $data['LoteDFe'] = array_map(fn (array $item) => $item + [
+            'xml' => isset($item['ArquivoXml']) ? (string) gzdecode((string) base64_decode($item['ArquivoXml'])) : null,
+        ], (array) ($data['LoteDFe'] ?? []));
+
+        return $data;
+    }
+
+    /** Convênio do município com o Sistema Nacional. */
+    public function municipalAgreement(string $cityIbgeCode): MunicipalAgreement
+    {
+        $data = (array) $this->send('get', $this->adn('parametrizacao/'.$cityIbgeCode.'/convenio'))->json();
+
+        return new MunicipalAgreement($cityIbgeCode, (array) ($data['parametrosConvenio'] ?? []), $data['mensagem'] ?? null);
+    }
+
+    /**
+     * Alíquota do serviço no município numa competência.
+     *
+     * @param  string  $serviceCode  código de tributação nacional + municipal (ex.: 01.05.01.001 ou 010501001)
+     * @param  string  $competence  AAAA-MM-DD
+     * @return array<string, mixed>
+     */
+    public function municipalRate(string $cityIbgeCode, string $serviceCode, string $competence): array
+    {
+        return $this->parameters("{$cityIbgeCode}/{$serviceCode}/{$competence}/aliquota");
+    }
+
+    /** @return array<string, mixed> */
+    public function municipalRateHistory(string $cityIbgeCode, string $serviceCode): array
+    {
+        return $this->parameters("{$cityIbgeCode}/{$serviceCode}/historicoaliquotas");
+    }
+
+    /** @return array<string, mixed> */
+    public function municipalBenefit(string $cityIbgeCode, string $benefitNumber, string $competence): array
+    {
+        return $this->parameters("{$cityIbgeCode}/{$benefitNumber}/{$competence}/beneficio");
+    }
+
+    /** @return array<string, mixed> */
+    public function specialRegimes(string $cityIbgeCode, string $serviceCode, string $competence): array
+    {
+        return $this->parameters("{$cityIbgeCode}/{$serviceCode}/{$competence}/regimes_especiais");
+    }
+
+    /** @return array<string, mixed> */
+    public function withholdings(string $cityIbgeCode, string $competence): array
+    {
+        return $this->parameters("{$cityIbgeCode}/{$competence}/retencoes");
+    }
+
+    // ================================================================ interno
+
+    /** @return array<string, mixed> */
+    private function parameters(string $path): array
+    {
+        $response = $this->send('get', $this->adn('parametrizacao/'.$path), allowNotFound: true);
+
+        return $response->status() === 404 ? [] : (array) $response->json();
+    }
+
+    private function applicationVersion(): string
+    {
+        return mb_substr((string) ($this->config['application_version'] ?? 'LaravelNfseNacional1'), 0, 20);
+    }
+
+    private function signer(): XmlSigner
+    {
+        return new XmlSigner((string) ($this->config['signature_algorithm'] ?? 'sha1'));
+    }
+
+    private function sefin(string $path): string
+    {
+        return rtrim((string) $this->config['urls'][$this->environment->key()]['sefin'], '/').'/'.$path;
+    }
+
+    private function adn(string $path): string
+    {
+        return rtrim((string) $this->config['urls'][$this->environment->key()]['adn'], '/').'/'.$path;
+    }
+
+    public static function pack(string $xml): string
+    {
+        return base64_encode((string) gzencode($xml));
+    }
+
+    private function request(string $accept = 'application/json'): PendingRequest
+    {
+        $this->credentials ??= new TemporaryCredentials($this->certificate, $this->config['temp_path'] ?? null);
+        $http = $this->config['http'] ?? [];
+        $verify = $http['verify'] ?? true;
+
+        return $this->http->withOptions([
+            'cert' => $this->credentials->certificatePath,
+            'ssl_key' => $this->credentials->keyPath,
+            'verify' => is_string($verify) && in_array(strtolower($verify), ['true', 'false', '1', '0'], true) ? filter_var($verify, FILTER_VALIDATE_BOOLEAN) : $verify,
+            'connect_timeout' => (int) ($http['connect_timeout'] ?? 15),
+        ])
+            ->timeout((int) ($http['timeout'] ?? 60))
+            ->withUserAgent('laravel-nfse-nacional')
+            ->accept($accept);
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $body
+     */
+    private function send(string $method, string $url, ?array $body = null, bool $allowNotFound = false, string $accept = 'application/json'): Response
+    {
+        $http = $this->config['http'] ?? [];
+        // POST não repete sozinho: a nota pode ter sido gerada (use emitOrRecover).
+        $attempts = $method === 'post' ? 1 : 1 + (int) ($http['retries'] ?? 2);
+        $last = null;
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            try {
+                $request = $this->request($accept);
+                $response = match ($method) {
+                    'post' => $request->asJson()->post($url, $body ?? []),
+                    'head' => $request->head($url),
+                    default => $request->get($url),
+                };
+            } catch (HttpConnectionException $e) {
+                $last = new ConnectionException('Sem resposta do Sistema Nacional NFS-e: '.$e->getMessage(), null, $e);
+                $this->pause($attempt, $attempts, $http);
+
+                continue;
+            }
+
+            if ($response->successful() || ($allowNotFound && $response->status() === 404)) {
+                return $response;
+            }
+
+            $status = $response->status();
+            $data = (array) $response->json();
+            $messages = ProcessingMessage::listFrom($data['erros'] ?? $data['Erros'] ?? $data['erro'] ?? $data['Erro'] ?? []);
+
+            if ($status === 429 || $status >= 500) {
+                $last = new ConnectionException(trim("HTTP {$status} do Sistema Nacional NFS-e. ".implode(' | ', array_map('strval', $messages))), $status);
+                $this->pause($attempt, $attempts, $http);
+
+                continue;
+            }
+
+            if ($messages === [] && ($data['mensagem'] ?? null)) {
+                $messages = [new ProcessingMessage(null, (string) $data['mensagem'])];
+            }
+
+            if ($messages === []) {
+                $messages = [new ProcessingMessage((string) $status, $status === 401 || $status === 403
+                    ? 'Acesso negado: o certificado não pertence a um dos participantes da nota ou não foi aceito.'
+                    : 'Requisição recusada (HTTP '.$status.').')];
+            }
+
+            throw new RejectedException($messages, $status, $data);
+        }
+
+        throw $last ?? new ConnectionException('Falha ao falar com o Sistema Nacional NFS-e.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $http
+     */
+    private function pause(int $attempt, int $attempts, array $http): void
+    {
+        if ($attempt < $attempts) {
+            usleep((int) ($http['retry_sleep_ms'] ?? 1000) * 1000 * $attempt);
+        }
+    }
+}

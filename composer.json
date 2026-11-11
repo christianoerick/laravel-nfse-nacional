@@ -1,0 +1,59 @@
+{
+    "name": "christianoerick/laravel-nfse-nacional",
+    "description": "NFS-e Nacional (Sefin Nacional / ADN) para Laravel 12 e 13: DPS completa no leiaute oficial 1.01, assinatura XMLDSig com certificado A1, emissão, consulta, cancelamento, substituição, parâmetros municipais e DANFSe.",
+    "keywords": ["laravel", "nfse", "nfs-e", "nfse-nacional", "sefin", "adn", "dps", "danfse", "nota fiscal de servico"],
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Christiano Erick",
+            "homepage": "https://github.com/christianoerick"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "ext-dom": "*",
+        "ext-gd": "*",
+        "ext-libxml": "*",
+        "ext-openssl": "*",
+        "ext-zlib": "*",
+        "chillerlan/php-qrcode": "^5.0",
+        "dompdf/dompdf": "^3.0",
+        "illuminate/http": "^12.0 || ^13.0",
+        "illuminate/support": "^12.0 || ^13.0",
+        "illuminate/view": "^12.0 || ^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "phpunit/phpunit": "^11.5 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ChristianoErick\\NfseNacional\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ChristianoErick\\NfseNacional\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ChristianoErick\\NfseNacional\\NfseNacionalServiceProvider"
+            ],
+            "aliases": {
+                "NfseNacional": "ChristianoErick\\NfseNacional\\Facades\\NfseNacional"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "generate": "php tools/generate.php"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
