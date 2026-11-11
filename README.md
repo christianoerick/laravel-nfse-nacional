@@ -1,5 +1,9 @@
 # Laravel NFS-e Nacional
 
+[![Versão no Packagist](https://img.shields.io/packagist/v/christianoerick/laravel-nfse-nacional.svg)](https://packagist.org/packages/christianoerick/laravel-nfse-nacional)
+[![Testes](https://github.com/christianoerick/laravel-nfse-nacional/actions/workflows/tests.yml/badge.svg)](https://github.com/christianoerick/laravel-nfse-nacional/actions/workflows/tests.yml)
+[![Licença](https://img.shields.io/packagist/l/christianoerick/laravel-nfse-nacional.svg)](LICENSE.md)
+
 Emissão de **NFS-e pelo Sistema Nacional (Sefin Nacional / ADN)** em Laravel 12 e 13, sem bibliotecas de terceiros para XML ou assinatura.
 
 - **DPS completa** nos leiautes oficiais **1.01** e **NT 009** (troca automática em 01/12/2026). Todos os campos do XSD são aceitos pelos nomes oficiais das tags, inclusive IBS/CBS, comércio exterior, obra, evento, deduções e benefícios. A ordem dos campos é tirada do XSD, e a DPS é validada localmente antes do envio.
