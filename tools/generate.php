@@ -48,7 +48,7 @@ const OVERRIDES = [
     'IssuerRole' => ['1' => ['Provider'], '2' => ['Taker'], '3' => ['Intermediary']],
     'SimplesNacionalOption' => ['1' => ['NotOptant'], '2' => ['Mei'], '3' => ['MeEpp']],
     'SimplesNacionalRegime' => ['1' => ['AllBySimples'], '2' => ['FederalBySimplesIssqnOutside'], '3' => ['AllOutsideSimples']],
-    'IssqnTaxation' => ['1' => ['Taxable'], '2' => ['Immunity'], '3' => ['ServiceExport'], '4' => ['NonIncidence']],
+    'IssqnTaxation' => ['1' => ['Taxable', 'Operação Tributável'], '2' => ['Immunity'], '3' => ['ServiceExport'], '4' => ['NonIncidence']],
     'IssqnWithholding' => ['1' => ['NotWithheld'], '2' => ['WithheldByTaker'], '3' => ['WithheldByIntermediary']],
     'TotalTaxIndicator' => ['0' => ['DoNotInform', 'Não informar (Simples Nacional / Decreto 8.264/2014)']],
     'CancellationReason' => ['1' => ['IssueError'], '2' => ['ServiceNotProvided'], '9' => ['Other']],

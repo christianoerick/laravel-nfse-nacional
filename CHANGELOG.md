@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 - 2026-11-11
+
+- DANFSe igual ao oficial: série sem zeros à esquerda, descrição municipal do serviço (xTribMun), "Simples Nacional" por extenso, "Operação Tributável" e totais aproximados com traços no Simples. Conferido com o PDF do portal.
+
 ## 0.1.3 - 2026-11-11
 
 - DPS e pedido de evento vão com a declaração `<?xml version="1.0" encoding="UTF-8"?>`: sem ela o Sefin recusa com E1229. Validado em produção (NFS-e emitida em Maceió).

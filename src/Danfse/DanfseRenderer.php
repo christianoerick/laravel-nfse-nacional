@@ -155,21 +155,23 @@ class DanfseRenderer
             'competence' => self::date($g($dps.'dCompet')),
             'processed_at' => self::dateTime($g('dhProc')),
             'dps_number' => $g($dps.'nDPS') ?? '-',
-            'dps_series' => $g($dps.'serie') ?? '-',
+            // Como no oficial: sem os zeros à esquerda (00001 → 1).
+            'dps_series' => $g($dps.'serie') !== null ? (ltrim((string) $g($dps.'serie'), '0') ?: '0') : '-',
             'dps_issued_at' => self::dateTime($g($dps.'dhEmi')),
             'issuer_role' => $label(IssuerRole::class, $g($dps.'tpEmit') ?? '1'),
             'status' => $g('cStat') === '100' || $g('cStat') === null ? 'NFS-e Gerada' : $label(NfseStatus::class, $g('cStat')),
             'purpose' => $g($dps.'subst.chSubstda') ? 'Substituição' : '-',
             'provider' => $party($prest, true),
             'simples' => $label(SimplesNacionalOption::class, $g($prest.'regTrib.opSimpNac')),
-            'simples_regime' => $label(SimplesNacionalRegime::class, $g($prest.'regTrib.regApTribSN')),
+            'simples_regime' => str_replace(' SN', ' Simples Nacional', $label(SimplesNacionalRegime::class, $g($prest.'regTrib.regApTribSN'))),
             'taker' => $party($toma),
             'recipient' => $g($dps.'IBSCBS.dest.xNome') ? $party($dps.'IBSCBS.dest.') : null,
             'intermediary' => $party($interm),
             'service_code' => ($nationalCode ? ServiceCodes::format($nationalCode) : '-').' / '.($g($dps.'serv.cServ.cTribMun') ?? '-'),
             'nbs' => $g($dps.'serv.cServ.cNBS') ?? '-',
             'service_place' => ($g('xLocPrestacao') ?? $city($g($dps.'serv.locPrest.cLocPrestacao'))).' / '.(self::STATES[substr((string) $g($dps.'serv.locPrest.cLocPrestacao'), 0, 2)] ?? '-').' / '.($g($dps.'serv.locPrest.cPaisPrestacao') ?? '-'),
-            'national_tax_description' => $g('xTribNac') ?? '-',
+            // O oficial mostra a descrição municipal quando existe.
+            'national_tax_description' => $g('xTribMun') ? trim((string) $g('xTribMun')) : ($g('xTribNac') ?? '-'),
             'description' => $g($dps.'serv.cServ.xDescServ') ?? '-',
             'issqn_taxation' => $label(IssqnTaxation::class, $immunity),
             'issqn_place' => ($g('xLocIncid') ?? '-').' / '.(self::STATES[substr((string) $g('cLocIncid'), 0, 2)] ?? '-').' / '.($g($trib.'tribMun.cPaisResult') ?? '-'),
@@ -228,9 +230,8 @@ class DanfseRenderer
             $parts[] = $line.'Federais: '.self::percent($total['pTotTrib']['pTotTribFed'] ?? null).'; Estaduais: '.self::percent($total['pTotTrib']['pTotTribEst'] ?? null).'; Municipais: '.self::percent($total['pTotTrib']['pTotTribMun'] ?? null).';';
         } elseif (isset($total['vTotTrib'])) {
             $parts[] = $line.'Federais: '.self::money($total['vTotTrib']['vTotTribFed'] ?? null).'; Estaduais: '.self::money($total['vTotTrib']['vTotTribEst'] ?? null).'; Municipais: '.self::money($total['vTotTrib']['vTotTribMun'] ?? null).';';
-        } elseif (isset($total['pTotTribSN'])) {
-            $parts[] = $line.'Simples Nacional: '.self::percent($total['pTotTribSN']).';';
         } else {
+            // Inclusive com pTotTribSN (Simples Nacional): o oficial mostra os traços.
             $parts[] = $line.'Federais: -; Estaduais: -; Municipais: -;';
         }
 

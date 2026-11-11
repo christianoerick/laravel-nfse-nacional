@@ -21,7 +21,7 @@ enum IssqnTaxation: string
     public function label(): string
     {
         return match ($this) {
-            self::Taxable => 'Operação tributável',
+            self::Taxable => 'Operação Tributável',
             self::Immunity => 'Imunidade',
             self::ServiceExport => 'Exportação de serviço',
             self::NonIncidence => 'Não Incidência',

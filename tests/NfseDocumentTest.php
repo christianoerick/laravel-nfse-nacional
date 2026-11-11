@@ -51,6 +51,11 @@ class NfseDocumentTest extends TestCase
         $this->assertSame('R$ 7.500,00', $data['service_amount']);
         $this->assertSame('Não Retido', $data['issqn_withholding']);
         $this->assertSame('(82) 99999-0000', $data['provider']['phone']);
+        // Igual ao DANFSe oficial (conferido com a NFS-e nº 2 de 11/11/2026).
+        $this->assertSame('1', $data['dps_series']);
+        $this->assertSame('Operação Tributável', $data['issqn_taxation']);
+        $this->assertStringEndsWith('pelo Simples Nacional', $data['simples_regime']);
+        $this->assertStringEndsWith('Federais: -; Estaduais: -; Municipais: -;', $data['additional_info']);
 
         $pdf = $renderer->render($nfse);
         $this->assertStringStartsWith('%PDF', $pdf);

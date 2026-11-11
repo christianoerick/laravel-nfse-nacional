@@ -80,7 +80,7 @@
                 </tr>
                 @if ($isProvider)
                     <tr>
-                        <td><span class="label">Simples Nacional na Data de Competência</span><span class="value">{{ \Illuminate\Support\Str::limit($d['simples'], 34) }}</span></td>
+                        <td><span class="label">Simples Nacional na Data de Competência</span><span class="value">{{ \Illuminate\Support\Str::limit($d['simples'], 36, ' ...') }}</span></td>
                         <td colspan="3"><span class="label">Regime de Apuração Tributária pelo SN</span><span class="value">{{ $d['simples_regime'] }}</span></td>
                     </tr>
                 @endif
