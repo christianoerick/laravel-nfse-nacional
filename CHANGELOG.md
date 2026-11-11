@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 - 2026-11-11
+
+- Logo do DANFSe com fundo branco (antes saía preto, com o texto ilegível).
+
 ## 0.1.1 - 2026-11-11
 
 - Aceita chillerlan/php-qrcode 5 e 6.
